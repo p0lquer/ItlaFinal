@@ -1,0 +1,8 @@
+# Credenciales
+.env
+
+# Binario compilado
+/ITLAFINAL
+
+# Dependencias (Go las maneja solo)
+vendor/
