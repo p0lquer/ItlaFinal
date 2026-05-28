@@ -22,12 +22,6 @@ cd ITLAFINAL
 cp .env.example .env   ← llenar con tus credenciales
 go run cmd/server/main.go
 
-### 4. Frontend
-cd itlafinal-frontend
-npm install
-npm run dev
-
 ## URLs
-- Frontend: http://localhost:5173
 - Backend:  http://localhost:8080
 - API Docs: http://localhost:8080/swagger
