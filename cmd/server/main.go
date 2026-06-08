@@ -30,14 +30,18 @@ func main() {
 	hub := websocket.NewHub()
 
 	// 4. Repositories
+	customerRepo := repository.NewCustomerRepository(db)
 	orderRepo := repository.NewOrderRepository(db)
 	predRepo := repository.NewPredictionRepository(db)
 
 	// 5. Use Cases
+	createCustomer := usecases.NewCreateCustomerUseCase(customerRepo)
+	getAllCustomers := usecases.NewGetAllCustomersUseCase(customerRepo)
 	createOrder := usecases.NewCreateOrderUseCase(orderRepo, predRepo)
 	updateOrderStatus := usecases.NewUpdateOrderStatusUseCase(orderRepo, hub)
 
 	// 6. Handlers
+	customerHandler := handlers.NewCustomerHandler(createCustomer, getAllCustomers)
 	getAllOrders := usecases.NewGetAllOrdersUseCase(orderRepo)
 	deleteOrder := usecases.NewDeleteOrderUseCase(orderRepo, predRepo)
 
@@ -70,6 +74,9 @@ func main() {
 	// API REST
 	api := r.Group("/api")
 	{
+		api.POST("/customers", customerHandler.Create)
+		api.GET("/customers", customerHandler.GetAll)
+
 		api.POST("/orders", orderHandler.Create)
 		api.GET("/orders", orderHandler.GetAll)
 		api.PATCH("/orders/:id/status", orderHandler.UpdateStatus)
