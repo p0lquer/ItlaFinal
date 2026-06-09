@@ -3,7 +3,8 @@ package main
 import (
 	"ITLAFINAL/adapters/handlers"
 	"ITLAFINAL/adapters/websocket"
-	"ITLAFINAL/domain/usecases"
+	"ITLAFINAL/domain/usecases/customerUseCases"
+	"ITLAFINAL/domain/usecases/orderUseCases"
 	"ITLAFINAL/infrastructure/database"
 	"ITLAFINAL/infrastructure/repository"
 	"ITLAFINAL/infrastructure/workers"
@@ -11,8 +12,18 @@ import (
 	"net/http"
 	"os"
 
+	_ "ITLAFINAL/docs"
+
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	swaggerFiles "github.com/swaggo/files"
+
+	ginSwagger "github.com/swaggo/gin-swagger"
+	// @title ITLAFINAL API
+	// @version 1.0
+	// @description API para la gestión de ordenes y clientes.
+	// @host localhost:8080
+	// @BasePath /api
 )
 
 func main() {
@@ -35,15 +46,16 @@ func main() {
 	predRepo := repository.NewPredictionRepository(db)
 
 	// 5. Use Cases
-	createCustomer := usecases.NewCreateCustomerUseCase(customerRepo)
-	getAllCustomers := usecases.NewGetAllCustomersUseCase(customerRepo)
-	createOrder := usecases.NewCreateOrderUseCase(orderRepo, predRepo)
-	updateOrderStatus := usecases.NewUpdateOrderStatusUseCase(orderRepo, hub)
+	createCustomer := customerUseCases.NewCreateCustomerUseCase(customerRepo)
+	getAllCustomers := customerUseCases.NewGetAllCustomersUseCase(customerRepo)
+
+	createOrder := orderUseCases.NewCreateOrderUseCase(orderRepo, predRepo)
+	updateOrderStatus := orderUseCases.NewUpdateOrderStatusUseCase(orderRepo)
 
 	// 6. Handlers
 	customerHandler := handlers.NewCustomerHandler(createCustomer, getAllCustomers)
-	getAllOrders := usecases.NewGetAllOrdersUseCase(orderRepo)
-	deleteOrder := usecases.NewDeleteOrderUseCase(orderRepo, predRepo)
+	getAllOrders := orderUseCases.NewGetAllOrdersUseCase(orderRepo)
+	deleteOrder := orderUseCases.NewDeleteOrderUseCase(orderRepo, predRepo)
 
 	orderHandler := handlers.NewOrderHandler(createOrder, updateOrderStatus, getAllOrders, deleteOrder)
 
@@ -53,6 +65,8 @@ func main() {
 
 	// 8. Router
 	r := gin.Default()
+
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// CORS para el frontend React
 	r.Use(func(c *gin.Context) {
@@ -90,6 +104,8 @@ func main() {
 
 	log.Printf("🚀 Servidor corriendo en :%s", port)
 	r.Run(":" + port)
+
+	log.Print(" 🌐 http://localhost:8080/swagger/index.html#/")
 }
 
 // LogNotifier — implementación temporal del port Notifier

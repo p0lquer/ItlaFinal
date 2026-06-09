@@ -1,0 +1,183 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API para la gestión de ordenes y clientes.",
+        "title": "ITLAFINAL API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/api",
+    "paths": {
+        "/customers": {
+            "get": {
+                "description": "Recupera la lista de todos los clientes registrados",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "customers"
+                ],
+                "summary": "Obtener todos los clientes",
+                "responses": {
+                    "200": {
+                        "description": "Lista de clientes obtenida con éxito"
+                    }
+                }
+            },
+            "post": {
+                "description": "Registra un nuevo cliente en la base de datos",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "customers"
+                ],
+                "summary": "Crear un cliente",
+                "responses": {
+                    "201": {
+                        "description": "Cliente creado con éxito"
+                    }
+                }
+            }
+        },
+        "/customers/{id}": {
+            "get": {
+                "description": "Recupera los detalles de un cliente específico utilizando su ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "customers"
+                ],
+                "summary": "Obtener un cliente por ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID del cliente",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Cliente obtenido con éxito"
+                    }
+                }
+            }
+        },
+        "/orders": {
+            "get": {
+                "description": "Recupera la lista de todas las órdenes registradas",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Obtener todas las órdenes",
+                "responses": {
+                    "200": {
+                        "description": "Lista de órdenes obtenida con éxito"
+                    }
+                }
+            },
+            "post": {
+                "description": "Registra una nueva orden en la base de datos",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Crear una orden",
+                "responses": {
+                    "201": {
+                        "description": "Orden creada con éxito"
+                    }
+                }
+            }
+        },
+        "/orders/{id}": {
+            "put": {
+                "description": "Actualiza el estado de una orden existente",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Actualizar el estado de una orden",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID de la orden",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Nuevo estado de la orden",
+                        "name": "status",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Estado actualizado con éxito"
+                    }
+                }
+            },
+            "delete": {
+                "description": "Elimina una orden existente de la base de datos",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Eliminar una orden",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID de la orden",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Orden eliminada con éxito"
+                    }
+                }
+            }
+        }
+    }
+}

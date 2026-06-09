@@ -1,20 +1,20 @@
 package handlers
 
 import (
-	"ITLAFINAL/domain/usecases"
+	"ITLAFINAL/domain/usecases/customerUseCases"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 type CustomerHandler struct {
-	createCustomer  *usecases.CreateCustomerUseCase
-	getAllCustomers *usecases.GetAllCustomersUseCase
+	createCustomer  *customerUseCases.CreateCustomerUseCase
+	getAllCustomers *customerUseCases.GetAllCustomersUseCase
 }
 
 func NewCustomerHandler(
-	create *usecases.CreateCustomerUseCase,
-	getAll *usecases.GetAllCustomersUseCase,
+	create *customerUseCases.CreateCustomerUseCase,
+	getAll *customerUseCases.GetAllCustomersUseCase,
 ) *CustomerHandler {
 	return &CustomerHandler{
 		createCustomer:  create,
@@ -22,6 +22,14 @@ func NewCustomerHandler(
 	}
 }
 
+// CreateCustomer godoc
+// @Summary Crear un cliente
+// @Description Registra un nuevo cliente en la base de datos
+// @Tags customers
+// @Accept  json
+// @Produce  json
+// @Success 201 "Cliente creado con éxito"
+// @Router /customers [post]
 func (h *CustomerHandler) Create(c *gin.Context) {
 	var req struct {
 		Name  string `json:"name" binding:"required"`
@@ -42,6 +50,14 @@ func (h *CustomerHandler) Create(c *gin.Context) {
 
 }
 
+// GetAllCustomers godoc
+// @Summary Obtener todos los clientes
+// @Description Recupera la lista de todos los clientes registrados
+// @Tags customers
+// @Accept  json
+// @Produce  json
+// @Success 200 "Lista de clientes obtenida con éxito"
+// @Router /customers [get]
 func (h *CustomerHandler) GetAll(c *gin.Context) {
 	customers, err := h.getAllCustomers.Execute()
 	if err != nil {
@@ -50,4 +66,23 @@ func (h *CustomerHandler) GetAll(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, customers)
 
+}
+
+// GetCustomerByID godoc
+// @Summary Obtener un cliente por ID
+// @Description Recupera los detalles de un cliente específico utilizando su ID
+// @Tags customers
+// @Accept  json
+// @Produce  json
+// @Param id path string true "ID del cliente"
+// @Success 200 "Cliente obtenido con éxito"
+// @Router /customers/{id} [get]
+func (h *CustomerHandler) GetByID(c *gin.Context) {
+	customerID := c.Param("id")
+	customer, err := h.getAllCustomers.ExecuteByID(customerID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, customer)
 }

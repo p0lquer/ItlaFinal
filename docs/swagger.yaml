@@ -1,0 +1,121 @@
+basePath: /api
+host: localhost:8080
+info:
+  contact: {}
+  description: API para la gestión de ordenes y clientes.
+  title: ITLAFINAL API
+  version: "1.0"
+paths:
+  /customers:
+    get:
+      consumes:
+      - application/json
+      description: Recupera la lista de todos los clientes registrados
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de clientes obtenida con éxito
+      summary: Obtener todos los clientes
+      tags:
+      - customers
+    post:
+      consumes:
+      - application/json
+      description: Registra un nuevo cliente en la base de datos
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Cliente creado con éxito
+      summary: Crear un cliente
+      tags:
+      - customers
+  /customers/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Recupera los detalles de un cliente específico utilizando su ID
+      parameters:
+      - description: ID del cliente
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Cliente obtenido con éxito
+      summary: Obtener un cliente por ID
+      tags:
+      - customers
+  /orders:
+    get:
+      consumes:
+      - application/json
+      description: Recupera la lista de todas las órdenes registradas
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de órdenes obtenida con éxito
+      summary: Obtener todas las órdenes
+      tags:
+      - orders
+    post:
+      consumes:
+      - application/json
+      description: Registra una nueva orden en la base de datos
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Orden creada con éxito
+      summary: Crear una orden
+      tags:
+      - orders
+  /orders/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Elimina una orden existente de la base de datos
+      parameters:
+      - description: ID de la orden
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Orden eliminada con éxito
+      summary: Eliminar una orden
+      tags:
+      - orders
+    put:
+      consumes:
+      - application/json
+      description: Actualiza el estado de una orden existente
+      parameters:
+      - description: ID de la orden
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Nuevo estado de la orden
+        in: body
+        name: status
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Estado actualizado con éxito
+      summary: Actualizar el estado de una orden
+      tags:
+      - orders
+swagger: "2.0"

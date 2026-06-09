@@ -57,12 +57,20 @@ func (r *customerRepositoryPG) FindAll() ([]*models.Customer, error) {
 	return customers, nil
 }
 
-func (r *customerRepositoryPG) UpdateStatus(id string, status models.OrderStatus) error {
-	// This method is not applicable for customers, so we can return an error or leave it unimplemented.
-	return nil
-}
+func (r *customerRepositoryPG) FindByID(customerID string) (*models.Customer, error) {
+	query := `SELECT id, name, email, phone, created_at, updated_at FROM customers WHERE id = $1`
+	row := r.db.QueryRow(query, customerID)
 
-func (r *customerRepositoryPG) Delete(id string) error {
-	// This method is not applicable for customers, so we can return an error or leave it unimplemented.
-	return nil
+	var customer models.Customer
+	if err := row.Scan(
+		&customer.ID,
+		&customer.Name,
+		&customer.Email,
+		&customer.Phone,
+		&customer.CreatedAt,
+		&customer.UpdatedAt,
+	); err != nil {
+		return nil, err
+	}
+	return &customer, nil
 }

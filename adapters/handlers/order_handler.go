@@ -2,24 +2,24 @@ package handlers
 
 import (
 	"ITLAFINAL/adapters/dto"
-	"ITLAFINAL/domain/usecases"
+	"ITLAFINAL/domain/usecases/orderUseCases"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 type OrderHandler struct {
-	createOrder       *usecases.CreateOrderUseCase
-	updateOrderStatus *usecases.UpdateOrderStatusUseCase
-	getAllOrders      *usecases.GetAllOrdersUseCase
-	deleteOrder       *usecases.DeleteOrderUseCase
+	createOrder       *orderUseCases.CreateOrderUseCase
+	updateOrderStatus *orderUseCases.UpdateOrderStatusUseCase
+	getAllOrders      *orderUseCases.GetAllOrdersUseCase
+	deleteOrder       *orderUseCases.DeleteOrderUseCase
 }
 
 func NewOrderHandler(
-	create *usecases.CreateOrderUseCase,
-	update *usecases.UpdateOrderStatusUseCase,
-	getAll *usecases.GetAllOrdersUseCase,
-	delete *usecases.DeleteOrderUseCase,
+	create *orderUseCases.CreateOrderUseCase,
+	update *orderUseCases.UpdateOrderStatusUseCase,
+	getAll *orderUseCases.GetAllOrdersUseCase,
+	delete *orderUseCases.DeleteOrderUseCase,
 ) *OrderHandler {
 	return &OrderHandler{
 		createOrder:       create,
@@ -29,6 +29,14 @@ func NewOrderHandler(
 	}
 }
 
+// @CreateOrder godoc
+// @Summary Crear una orden
+// @Description Registra una nueva orden en la base de datos
+// @Tags orders
+// @Accept  json
+// @Produce  json
+// @Success 201 "Orden creada con éxito"
+// @Router /orders [post]
 func (h *OrderHandler) Create(c *gin.Context) {
 	var req dto.CreateOrderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -50,6 +58,14 @@ func (h *OrderHandler) Create(c *gin.Context) {
 	})
 }
 
+// GetAllOrders godoc
+// @Summary Obtener todas las órdenes
+// @Description Recupera la lista de todas las órdenes registradas
+// @Tags orders
+// @Accept  json
+// @Produce  json
+// @Success 200 "Lista de órdenes obtenida con éxito"
+// @Router /orders [get]
 func (h *OrderHandler) GetAll(c *gin.Context) {
 	orders, err := h.getAllOrders.Execute()
 	if err != nil {
@@ -59,6 +75,16 @@ func (h *OrderHandler) GetAll(c *gin.Context) {
 	c.JSON(http.StatusOK, orders)
 }
 
+// @UpdateOrderStatus godoc
+// @Summary Actualizar el estado de una orden
+// @Description Actualiza el estado de una orden existente
+// @Tags orders
+// @Accept  json
+// @Produce  json
+// @Param id path string true "ID de la orden"
+// @Param status body string true "Nuevo estado de la orden"
+// @Success 200 "Estado actualizado con éxito"
+// @Router /orders/{id} [put]
 func (h *OrderHandler) UpdateStatus(c *gin.Context) {
 	orderID := c.Param("id")
 
@@ -76,6 +102,15 @@ func (h *OrderHandler) UpdateStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "estado actualizado"})
 }
 
+// @DeleteOrder godoc
+// @Summary Eliminar una orden
+// @Description Elimina una orden existente de la base de datos
+// @Tags orders
+// @Accept  json
+// @Produce  json
+// @Param id path string true "ID de la orden"
+// @Success 200 "Orden eliminada con éxito"
+// @Router /orders/{id} [delete]
 func (h *OrderHandler) Delete(c *gin.Context) {
 	orderID := c.Param("id")
 
