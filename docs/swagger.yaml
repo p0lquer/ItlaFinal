@@ -1,4 +1,36 @@
 basePath: /api
+definitions:
+  dto.CreateCustomerRequest:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+    required:
+    - email
+    - name
+    - phone
+    type: object
+  dto.CreateOrderRequest:
+    properties:
+      customer_id:
+        type: string
+      notes:
+        type: string
+      pieces_count:
+        minimum: 1
+        type: integer
+      service_type:
+        type: string
+    required:
+    - customer_id
+    - pieces_count
+    - service_type
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -23,6 +55,13 @@ paths:
       consumes:
       - application/json
       description: Registra un nuevo cliente en la base de datos
+      parameters:
+      - description: Customer data
+        in: body
+        name: customer
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateCustomerRequest'
       produces:
       - application/json
       responses:
@@ -67,6 +106,13 @@ paths:
       consumes:
       - application/json
       description: Registra una nueva orden en la base de datos
+      parameters:
+      - description: Order data
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateOrderRequest'
       produces:
       - application/json
       responses:

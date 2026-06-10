@@ -19,8 +19,8 @@ func (uc *CreateCustomerUseCase) Execute(id, name, phone, email string) (*models
 	customer := &models.Customer{
 		ID:    id,
 		Name:  name,
-		Phone: phone,
-		Email: email,
+		Phone: &phone,
+		Email: &email,
 	}
 	if err := uc.customerRepo.Create(customer); err != nil {
 		return nil, err

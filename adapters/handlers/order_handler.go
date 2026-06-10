@@ -37,6 +37,7 @@ func NewOrderHandler(
 // @Produce  json
 // @Success 201 "Orden creada con éxito"
 // @Router /orders [post]
+// @Param order body dto.CreateOrderRequest true "Order data"
 func (h *OrderHandler) Create(c *gin.Context) {
 	var req dto.CreateOrderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

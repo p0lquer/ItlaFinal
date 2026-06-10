@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"ITLAFINAL/adapters/dto"
 	"ITLAFINAL/domain/usecases/customerUseCases"
+	"database/sql"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -30,13 +32,9 @@ func NewCustomerHandler(
 // @Produce  json
 // @Success 201 "Cliente creado con éxito"
 // @Router /customers [post]
+// @Param customer body dto.CreateCustomerRequest true "Customer data"
 func (h *CustomerHandler) Create(c *gin.Context) {
-	var req struct {
-		ID    string `json:"id"`
-		Name  string `json:"name" binding:"required"`
-		Phone string `json:"phone" binding:"required"`
-		Email string `json:"email" binding:"required,email"`
-	}
+	var req dto.CreateCustomerRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -82,6 +80,10 @@ func (h *CustomerHandler) GetByID(c *gin.Context) {
 	customerID := c.Param("id")
 	customer, err := h.getAllCustomers.ExecuteByID(customerID)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Cliente no encontrado"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

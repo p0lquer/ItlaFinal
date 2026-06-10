@@ -46,6 +46,17 @@ const docTemplate = `{
                     "customers"
                 ],
                 "summary": "Crear un cliente",
+                "parameters": [
+                    {
+                        "description": "Customer data",
+                        "name": "customer",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateCustomerRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "201": {
                         "description": "Cliente creado con éxito"
@@ -113,6 +124,17 @@ const docTemplate = `{
                     "orders"
                 ],
                 "summary": "Crear una orden",
+                "parameters": [
+                    {
+                        "description": "Order data",
+                        "name": "order",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateOrderRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "201": {
                         "description": "Orden creada con éxito"
@@ -182,6 +204,53 @@ const docTemplate = `{
                     "200": {
                         "description": "Orden eliminada con éxito"
                     }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "dto.CreateCustomerRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "name",
+                "phone"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CreateOrderRequest": {
+            "type": "object",
+            "required": [
+                "customer_id",
+                "pieces_count",
+                "service_type"
+            ],
+            "properties": {
+                "customer_id": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "pieces_count": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "service_type": {
+                    "type": "string"
                 }
             }
         }

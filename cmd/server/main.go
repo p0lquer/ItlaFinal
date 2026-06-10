@@ -90,6 +90,7 @@ func main() {
 	{
 		api.POST("/customers", customerHandler.Create)
 		api.GET("/customers", customerHandler.GetAll)
+		api.GET("/customers/:id", customerHandler.GetByID)
 
 		api.POST("/orders", orderHandler.Create)
 		api.GET("/orders", orderHandler.GetAll)
