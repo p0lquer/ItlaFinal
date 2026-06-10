@@ -18,20 +18,19 @@ func NewCustomerRepository(db *sql.DB) ports.CustomerRepository {
 
 func (r *customerRepositoryPG) Create(customer *models.Customer) error {
 	query := `
-		INSERT INTO customers (id, name, email, phone, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)
+		INSERT INTO customers (id, name, phone, email) VALUES ($1, $2, $3, $4)
 	`
 	_, err := r.db.Exec(query,
 		customer.ID,
 		customer.Name,
-		customer.Email,
 		customer.Phone,
-		customer.CreatedAt,
-		customer.UpdatedAt)
+		customer.Email,
+	)
 	return err
 }
 
 func (r *customerRepositoryPG) FindAll() ([]*models.Customer, error) {
-	query := `SELECT id, name, email, phone, created_at, updated_at FROM customers`
+	query := `SELECT id, name, email, phone FROM customers`
 	rows, err := r.db.Query(query)
 	if err != nil {
 		return nil, err
@@ -46,8 +45,6 @@ func (r *customerRepositoryPG) FindAll() ([]*models.Customer, error) {
 			&customer.Name,
 			&customer.Email,
 			&customer.Phone,
-			&customer.CreatedAt,
-			&customer.UpdatedAt,
 		)
 		if err != nil {
 			return nil, err
@@ -58,7 +55,7 @@ func (r *customerRepositoryPG) FindAll() ([]*models.Customer, error) {
 }
 
 func (r *customerRepositoryPG) FindByID(customerID string) (*models.Customer, error) {
-	query := `SELECT id, name, email, phone, created_at, updated_at FROM customers WHERE id = $1`
+	query := `SELECT id, name, email, phone FROM customers WHERE id = $1`
 	row := r.db.QueryRow(query, customerID)
 
 	var customer models.Customer
@@ -67,8 +64,6 @@ func (r *customerRepositoryPG) FindByID(customerID string) (*models.Customer, er
 		&customer.Name,
 		&customer.Email,
 		&customer.Phone,
-		&customer.CreatedAt,
-		&customer.UpdatedAt,
 	); err != nil {
 		return nil, err
 	}

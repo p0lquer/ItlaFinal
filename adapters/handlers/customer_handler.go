@@ -32,6 +32,7 @@ func NewCustomerHandler(
 // @Router /customers [post]
 func (h *CustomerHandler) Create(c *gin.Context) {
 	var req struct {
+		ID    string `json:"id"`
 		Name  string `json:"name" binding:"required"`
 		Phone string `json:"phone" binding:"required"`
 		Email string `json:"email" binding:"required,email"`
@@ -41,7 +42,7 @@ func (h *CustomerHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	customer, err := h.createCustomer.Execute(req.Name, req.Phone, req.Email)
+	customer, err := h.createCustomer.Execute(req.ID, req.Name, req.Phone, req.Email)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
