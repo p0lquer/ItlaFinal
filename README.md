@@ -23,5 +23,5 @@ cp .env.example .env   ← llenar con tus credenciales
 go run cmd/server/main.go
 
 ## URLs
-- Backend:  http://localhost:8080
+
 - API Docs: http://localhost:8080/swagger/index.html
