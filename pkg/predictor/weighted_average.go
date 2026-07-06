@@ -42,15 +42,23 @@ func LinearRegression(data []DataPoint) func(pieces int) float64 {
 		sumXY += x * y
 		sumX2 += x * x
 	}
+	denominator := n*sumX2 - sumX*sumX
+	// valida si el denominador es cero para evitar división por cero
+	if denominator == 0 {
+		// If all historical jobs had the exact same number of pieces,
+		// we can't find a slope. Just return the average time.
+		averageTime := sumY / n
+		return func(pieces int) float64 { return averageTime }
+	}
 
 	// Calcular pendiente (b) e intercepto (a)
-	b := (n*sumXY - sumX*sumY) / (n*sumX2 - sumX*sumX)
+	b := (n*sumXY - sumX*sumY) / denominator
 	a := (sumY - b*sumX) / n
 
 	return func(pieces int) float64 {
 		result := a + b*float64(pieces)
-		if result < 15 {
-			return 15 // mínimo 15 minutos
+		if result < 20 {
+			return 20 // mínimo 20 minutos
 		}
 		return math.Round(result)
 	}
