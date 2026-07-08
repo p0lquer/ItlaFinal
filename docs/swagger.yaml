@@ -1,6 +1,6 @@
 basePath: /api
 definitions:
-  dto.CreateCustomerRequest:
+  ITLAFINAL_adapters_dto.CreateCustomerRequest:
     properties:
       email:
         type: string
@@ -15,7 +15,7 @@ definitions:
     - name
     - phone
     type: object
-  dto.CreateOrderRequest:
+  ITLAFINAL_adapters_dto.CreateOrderRequest:
     properties:
       customer_id:
         type: string
@@ -31,6 +31,36 @@ definitions:
     - pieces_count
     - service_type
     type: object
+  ITLAFINAL_adapters_dto.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  ITLAFINAL_adapters_dto.RegisterRequest:
+    properties:
+      email:
+        type: string
+      name:
+        minLength: 2
+        type: string
+      operator_key:
+        description: opcional — si coincide → operador
+        type: string
+      password:
+        minLength: 6
+        type: string
+      phone:
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -38,6 +68,46 @@ info:
   title: ITLAFINAL API
   version: "1.0"
 paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Autentica a un usuario y devuelve un token JWT
+      parameters:
+      - description: User credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/ITLAFINAL_adapters_dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Inicio de sesión exitoso
+      summary: Iniciar sesión
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Registra un nuevo usuario en la base de datos
+      parameters:
+      - description: User data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/ITLAFINAL_adapters_dto.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Usuario registrado con éxito
+      summary: Registrar un usuario
+      tags:
+      - auth
   /customers:
     get:
       consumes:
@@ -61,7 +131,7 @@ paths:
         name: customer
         required: true
         schema:
-          $ref: '#/definitions/dto.CreateCustomerRequest'
+          $ref: '#/definitions/ITLAFINAL_adapters_dto.CreateCustomerRequest'
       produces:
       - application/json
       responses:
@@ -112,7 +182,7 @@ paths:
         name: order
         required: true
         schema:
-          $ref: '#/definitions/dto.CreateOrderRequest'
+          $ref: '#/definitions/ITLAFINAL_adapters_dto.CreateOrderRequest'
       produces:
       - application/json
       responses:
@@ -164,4 +234,28 @@ paths:
       summary: Actualizar el estado de una orden
       tags:
       - orders
+  /users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Elimina un usuario y su cliente asociado si existe
+      parameters:
+      - description: ID del usuario
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Usuario eliminado con éxito
+      summary: Eliminar un usuario
+      tags:
+      - auth
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

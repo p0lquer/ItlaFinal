@@ -2,9 +2,11 @@ package main
 
 import (
 	"ITLAFINAL/adapters/handlers"
+	"ITLAFINAL/adapters/middleware"
 	"ITLAFINAL/adapters/websocket"
 	"ITLAFINAL/domain/usecases/customerUseCases"
 	"ITLAFINAL/domain/usecases/orderUseCases"
+	"ITLAFINAL/domain/usecases/userUseCases"
 	"ITLAFINAL/infrastructure/database"
 	"ITLAFINAL/infrastructure/repository"
 	"ITLAFINAL/infrastructure/workers"
@@ -24,6 +26,9 @@ import (
 	// @description API para la gestión de ordenes y clientes.
 	// @host localhost:8080
 	// @BasePath /api
+	// @securityDefinitions.apikey BearerAuth
+	// @in header
+	// @name Authorization
 )
 
 func main() {
@@ -63,8 +68,46 @@ func main() {
 	worker := workers.NewTimerWorker(orderRepo, hub)
 	go worker.Start()
 
-	// 8. Router
+	//8. Auth
+	userRepo := repository.NewUserRepository(db)
+	registerUC := userUseCases.NewRegisterUserUseCase(userRepo, customerRepo)
+	loginUC := userUseCases.NewLoginUserUseCase(userRepo)
+	deleteUserUC := userUseCases.NewDeleteUserUseCase(userRepo, customerRepo)
+	authHandler := handlers.NewAuthHandler(registerUC, loginUC, deleteUserUC)
+
+	// 9. Router
 	r := gin.Default()
+
+	// Públicas — sin middleware
+	auth := r.Group("/api/auth")
+	{
+		auth.POST("/register", authHandler.Register)
+		auth.POST("/login", authHandler.Login)
+	}
+
+	//protected
+	api := r.Group("/api", middleware.AuthRequired())
+	{
+		api.GET("/auth/me", authHandler.Me)
+
+		// Órdenes — cualquier usuario autenticado puede ver
+		api.GET("/orders", orderHandler.GetAll)
+
+		// Órdenes — solo operadores pueden crear/modificar/eliminar
+		operator := api.Group("/", middleware.OperatorOnly())
+		{
+			operator.DELETE("/users/:id", authHandler.DeleteUser)
+			operator.POST("/orders", orderHandler.Create)
+			operator.PATCH("/orders/:id/status", orderHandler.UpdateStatus)
+			operator.DELETE("/orders/:id", orderHandler.Delete)
+		}
+	}
+
+	{
+		api.POST("/customers", customerHandler.Create)
+		api.GET("/customers", customerHandler.GetAll)
+		api.GET("/customers/:id", customerHandler.GetByID)
+	}
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -84,19 +127,6 @@ func main() {
 	r.GET("/ws", func(c *gin.Context) {
 		hub.HandleConnection(c.Writer, c.Request)
 	})
-
-	// API REST
-	api := r.Group("/api")
-	{
-		api.POST("/customers", customerHandler.Create)
-		api.GET("/customers", customerHandler.GetAll)
-		api.GET("/customers/:id", customerHandler.GetByID)
-
-		api.POST("/orders", orderHandler.Create)
-		api.GET("/orders", orderHandler.GetAll)
-		api.PATCH("/orders/:id/status", orderHandler.UpdateStatus)
-		api.DELETE("/orders/:id", orderHandler.Delete)
-	}
 
 	port := os.Getenv("PORT")
 	if port == "" {

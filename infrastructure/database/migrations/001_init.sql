@@ -31,7 +31,3 @@ CREATE TABLE IF NOT EXISTS predictions (
     created_at      TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- Datos de prueba
-INSERT INTO customers (id, name, phone, email) VALUES
-    ('c1', 'Juan Pérez',    '809-555-0001', 'juan@mail.com'),
-    ('c2', 'María Gómez',   '809-555-0002', 'maria@mail.com');

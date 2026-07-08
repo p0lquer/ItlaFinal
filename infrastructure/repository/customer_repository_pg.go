@@ -69,3 +69,8 @@ func (r *customerRepositoryPG) FindByID(customerID string) (*models.Customer, er
 	}
 	return &customer, nil
 }
+
+func (r *customerRepositoryPG) Delete(customerID string) error {
+	_, err := r.db.Exec(`DELETE FROM customers WHERE id = $1`, customerID)
+	return err
+}

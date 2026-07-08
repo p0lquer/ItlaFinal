@@ -6,4 +6,5 @@ type CustomerRepository interface {
 	Create(customer *models.Customer) error
 	FindAll() ([]*models.Customer, error)
 	FindByID(customerID string) (*models.Customer, error)
+	Delete(customerID string) error
 }
