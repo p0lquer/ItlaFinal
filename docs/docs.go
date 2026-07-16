@@ -35,13 +35,38 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ITLAFINAL_adapters_dto.LoginRequest"
+                            "$ref": "#/definitions/dto.LoginRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "Inicio de sesión exitoso"
+                    }
+                }
+            }
+        },
+        "/auth/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna los datos del usuario autenticado usando el JWT",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Obtener perfil autenticado",
+                "responses": {
+                    "200": {
+                        "description": "Perfil obtenido con éxito"
                     }
                 }
             }
@@ -66,7 +91,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ITLAFINAL_adapters_dto.RegisterRequest"
+                            "$ref": "#/definitions/dto.RegisterRequest"
                         }
                     }
                 ],
@@ -79,6 +104,11 @@ const docTemplate = `{
         },
         "/customers": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Recupera la lista de todos los clientes registrados",
                 "consumes": [
                     "application/json"
@@ -97,6 +127,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Registra un nuevo cliente en la base de datos",
                 "consumes": [
                     "application/json"
@@ -115,7 +150,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ITLAFINAL_adapters_dto.CreateCustomerRequest"
+                            "$ref": "#/definitions/dto.CreateCustomerRequest"
                         }
                     }
                 ],
@@ -128,6 +163,11 @@ const docTemplate = `{
         },
         "/customers/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Recupera los detalles de un cliente específico utilizando su ID",
                 "consumes": [
                     "application/json"
@@ -157,6 +197,11 @@ const docTemplate = `{
         },
         "/orders": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Recupera la lista de todas las órdenes registradas",
                 "consumes": [
                     "application/json"
@@ -175,6 +220,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Registra una nueva orden en la base de datos",
                 "consumes": [
                     "application/json"
@@ -193,7 +243,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ITLAFINAL_adapters_dto.CreateOrderRequest"
+                            "$ref": "#/definitions/dto.CreateOrderRequest"
                         }
                     }
                 ],
@@ -206,6 +256,11 @@ const docTemplate = `{
         },
         "/orders/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Actualiza el estado de una orden existente",
                 "consumes": [
                     "application/json"
@@ -242,6 +297,11 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Elimina una orden existente de la base de datos",
                 "consumes": [
                     "application/json"
@@ -300,7 +360,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "ITLAFINAL_adapters_dto.CreateCustomerRequest": {
+        "dto.CreateCustomerRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -322,7 +382,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ITLAFINAL_adapters_dto.CreateOrderRequest": {
+        "dto.CreateOrderRequest": {
             "type": "object",
             "required": [
                 "customer_id",
@@ -345,7 +405,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ITLAFINAL_adapters_dto.LoginRequest": {
+        "dto.LoginRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -360,7 +420,7 @@ const docTemplate = `{
                 }
             }
         },
-        "ITLAFINAL_adapters_dto.RegisterRequest": {
+        "dto.RegisterRequest": {
             "type": "object",
             "required": [
                 "email",

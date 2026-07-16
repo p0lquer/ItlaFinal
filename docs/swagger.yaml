@@ -1,6 +1,6 @@
 basePath: /api
 definitions:
-  ITLAFINAL_adapters_dto.CreateCustomerRequest:
+  dto.CreateCustomerRequest:
     properties:
       email:
         type: string
@@ -15,7 +15,7 @@ definitions:
     - name
     - phone
     type: object
-  ITLAFINAL_adapters_dto.CreateOrderRequest:
+  dto.CreateOrderRequest:
     properties:
       customer_id:
         type: string
@@ -31,7 +31,7 @@ definitions:
     - pieces_count
     - service_type
     type: object
-  ITLAFINAL_adapters_dto.LoginRequest:
+  dto.LoginRequest:
     properties:
       email:
         type: string
@@ -41,7 +41,7 @@ definitions:
     - email
     - password
     type: object
-  ITLAFINAL_adapters_dto.RegisterRequest:
+  dto.RegisterRequest:
     properties:
       email:
         type: string
@@ -79,13 +79,28 @@ paths:
         name: credentials
         required: true
         schema:
-          $ref: '#/definitions/ITLAFINAL_adapters_dto.LoginRequest'
+          $ref: '#/definitions/dto.LoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Inicio de sesión exitoso
       summary: Iniciar sesión
+      tags:
+      - auth
+  /auth/me:
+    get:
+      consumes:
+      - application/json
+      description: Retorna los datos del usuario autenticado usando el JWT
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Perfil obtenido con éxito
+      security:
+      - BearerAuth: []
+      summary: Obtener perfil autenticado
       tags:
       - auth
   /auth/register:
@@ -99,7 +114,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/ITLAFINAL_adapters_dto.RegisterRequest'
+          $ref: '#/definitions/dto.RegisterRequest'
       produces:
       - application/json
       responses:
@@ -118,6 +133,8 @@ paths:
       responses:
         "200":
           description: Lista de clientes obtenida con éxito
+      security:
+      - BearerAuth: []
       summary: Obtener todos los clientes
       tags:
       - customers
@@ -131,12 +148,14 @@ paths:
         name: customer
         required: true
         schema:
-          $ref: '#/definitions/ITLAFINAL_adapters_dto.CreateCustomerRequest'
+          $ref: '#/definitions/dto.CreateCustomerRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Cliente creado con éxito
+      security:
+      - BearerAuth: []
       summary: Crear un cliente
       tags:
       - customers
@@ -156,6 +175,8 @@ paths:
       responses:
         "200":
           description: Cliente obtenido con éxito
+      security:
+      - BearerAuth: []
       summary: Obtener un cliente por ID
       tags:
       - customers
@@ -169,6 +190,8 @@ paths:
       responses:
         "200":
           description: Lista de órdenes obtenida con éxito
+      security:
+      - BearerAuth: []
       summary: Obtener todas las órdenes
       tags:
       - orders
@@ -182,12 +205,14 @@ paths:
         name: order
         required: true
         schema:
-          $ref: '#/definitions/ITLAFINAL_adapters_dto.CreateOrderRequest'
+          $ref: '#/definitions/dto.CreateOrderRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Orden creada con éxito
+      security:
+      - BearerAuth: []
       summary: Crear una orden
       tags:
       - orders
@@ -207,6 +232,8 @@ paths:
       responses:
         "200":
           description: Orden eliminada con éxito
+      security:
+      - BearerAuth: []
       summary: Eliminar una orden
       tags:
       - orders
@@ -231,6 +258,8 @@ paths:
       responses:
         "200":
           description: Estado actualizado con éxito
+      security:
+      - BearerAuth: []
       summary: Actualizar el estado de una orden
       tags:
       - orders

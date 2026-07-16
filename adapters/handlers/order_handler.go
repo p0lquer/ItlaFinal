@@ -33,6 +33,7 @@ func NewOrderHandler(
 // @Summary Crear una orden
 // @Description Registra una nueva orden en la base de datos
 // @Tags orders
+// @Security BearerAuth
 // @Accept  json
 // @Produce  json
 // @Success 201 "Orden creada con éxito"
@@ -63,6 +64,7 @@ func (h *OrderHandler) Create(c *gin.Context) {
 // @Summary Obtener todas las órdenes
 // @Description Recupera la lista de todas las órdenes registradas
 // @Tags orders
+// @Security BearerAuth
 // @Accept  json
 // @Produce  json
 // @Success 200 "Lista de órdenes obtenida con éxito"
@@ -80,6 +82,7 @@ func (h *OrderHandler) GetAll(c *gin.Context) {
 // @Summary Actualizar el estado de una orden
 // @Description Actualiza el estado de una orden existente
 // @Tags orders
+// @Security BearerAuth
 // @Accept  json
 // @Produce  json
 // @Param id path string true "ID de la orden"
@@ -107,6 +110,7 @@ func (h *OrderHandler) UpdateStatus(c *gin.Context) {
 // @Summary Eliminar una orden
 // @Description Elimina una orden existente de la base de datos
 // @Tags orders
+// @Security BearerAuth
 // @Accept  json
 // @Produce  json
 // @Param id path string true "ID de la orden"

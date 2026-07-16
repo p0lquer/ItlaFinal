@@ -28,6 +28,7 @@ func NewCustomerHandler(
 // @Summary Crear un cliente
 // @Description Registra un nuevo cliente en la base de datos
 // @Tags customers
+// @Security BearerAuth
 // @Accept  json
 // @Produce  json
 // @Success 201 "Cliente creado con éxito"
@@ -53,6 +54,7 @@ func (h *CustomerHandler) Create(c *gin.Context) {
 // @Summary Obtener todos los clientes
 // @Description Recupera la lista de todos los clientes registrados
 // @Tags customers
+// @Security BearerAuth
 // @Accept  json
 // @Produce  json
 // @Success 200 "Lista de clientes obtenida con éxito"
@@ -71,6 +73,7 @@ func (h *CustomerHandler) GetAll(c *gin.Context) {
 // @Summary Obtener un cliente por ID
 // @Description Recupera los detalles de un cliente específico utilizando su ID
 // @Tags customers
+// @Security BearerAuth
 // @Accept  json
 // @Produce  json
 // @Param id path string true "ID del cliente"

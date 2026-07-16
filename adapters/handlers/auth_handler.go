@@ -83,6 +83,14 @@ func (h *AuthHandler) Login(c *gin.Context) {
 }
 
 // Me — retorna el perfil del usuario autenticado usando el JWT
+// @Summary Obtener perfil autenticado
+// @Description Retorna los datos del usuario autenticado usando el JWT
+// @Tags auth
+// @Security BearerAuth
+// @Accept  json
+// @Produce  json
+// @Success 200 "Perfil obtenido con éxito"
+// @Router /auth/me [get]
 func (h *AuthHandler) Me(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"user_id": c.GetString("user_id"),

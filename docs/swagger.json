@@ -29,13 +29,38 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ITLAFINAL_adapters_dto.LoginRequest"
+                            "$ref": "#/definitions/dto.LoginRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "Inicio de sesión exitoso"
+                    }
+                }
+            }
+        },
+        "/auth/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna los datos del usuario autenticado usando el JWT",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Obtener perfil autenticado",
+                "responses": {
+                    "200": {
+                        "description": "Perfil obtenido con éxito"
                     }
                 }
             }
@@ -60,7 +85,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ITLAFINAL_adapters_dto.RegisterRequest"
+                            "$ref": "#/definitions/dto.RegisterRequest"
                         }
                     }
                 ],
@@ -73,6 +98,11 @@
         },
         "/customers": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Recupera la lista de todos los clientes registrados",
                 "consumes": [
                     "application/json"
@@ -91,6 +121,11 @@
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Registra un nuevo cliente en la base de datos",
                 "consumes": [
                     "application/json"
@@ -109,7 +144,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ITLAFINAL_adapters_dto.CreateCustomerRequest"
+                            "$ref": "#/definitions/dto.CreateCustomerRequest"
                         }
                     }
                 ],
@@ -122,6 +157,11 @@
         },
         "/customers/{id}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Recupera los detalles de un cliente específico utilizando su ID",
                 "consumes": [
                     "application/json"
@@ -151,6 +191,11 @@
         },
         "/orders": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Recupera la lista de todas las órdenes registradas",
                 "consumes": [
                     "application/json"
@@ -169,6 +214,11 @@
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Registra una nueva orden en la base de datos",
                 "consumes": [
                     "application/json"
@@ -187,7 +237,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/ITLAFINAL_adapters_dto.CreateOrderRequest"
+                            "$ref": "#/definitions/dto.CreateOrderRequest"
                         }
                     }
                 ],
@@ -200,6 +250,11 @@
         },
         "/orders/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Actualiza el estado de una orden existente",
                 "consumes": [
                     "application/json"
@@ -236,6 +291,11 @@
                 }
             },
             "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Elimina una orden existente de la base de datos",
                 "consumes": [
                     "application/json"
@@ -294,7 +354,7 @@
         }
     },
     "definitions": {
-        "ITLAFINAL_adapters_dto.CreateCustomerRequest": {
+        "dto.CreateCustomerRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -316,7 +376,7 @@
                 }
             }
         },
-        "ITLAFINAL_adapters_dto.CreateOrderRequest": {
+        "dto.CreateOrderRequest": {
             "type": "object",
             "required": [
                 "customer_id",
@@ -339,7 +399,7 @@
                 }
             }
         },
-        "ITLAFINAL_adapters_dto.LoginRequest": {
+        "dto.LoginRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -354,7 +414,7 @@
                 }
             }
         },
-        "ITLAFINAL_adapters_dto.RegisterRequest": {
+        "dto.RegisterRequest": {
             "type": "object",
             "required": [
                 "email",
