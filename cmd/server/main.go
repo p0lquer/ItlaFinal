@@ -11,11 +11,11 @@ import (
 	"ITLAFINAL/infrastructure/repository"
 	"ITLAFINAL/infrastructure/workers"
 	"log"
-	"net/http"
 	"os"
 
-	_ "ITLAFINAL/docs"
+	_ "ITLAFINAL/doc"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	swaggerFiles "github.com/swaggo/files"
@@ -77,6 +77,13 @@ func main() {
 
 	// 9. Router
 	r := gin.Default()
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:5173", "http://127.0.0.1:5173"},
+		AllowMethods:     []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length", "Authorization"},
+		AllowCredentials: false,
+	}))
 
 	// Públicas — sin middleware
 	auth := r.Group("/api/auth")
@@ -110,18 +117,6 @@ func main() {
 	}
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-
-	// CORS para el frontend React
-	r.Use(func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Content-Type,Authorization")
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(http.StatusNoContent)
-			return
-		}
-		c.Next()
-	})
 
 	// WebSocket endpoint
 	r.GET("/ws", func(c *gin.Context) {
