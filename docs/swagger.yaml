@@ -160,6 +160,26 @@ paths:
       tags:
       - customers
   /customers/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Elimina un cliente específico utilizando su ID
+      parameters:
+      - description: ID del cliente
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Cliente eliminado con éxito
+      security:
+      - BearerAuth: []
+      summary: Eliminar un cliente
+      tags:
+      - customers
     get:
       consumes:
       - application/json

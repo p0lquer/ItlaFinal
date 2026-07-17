@@ -187,6 +187,38 @@
                         "description": "Cliente obtenido con éxito"
                     }
                 }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Elimina un cliente específico utilizando su ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "customers"
+                ],
+                "summary": "Eliminar un cliente",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID del cliente",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Cliente eliminado con éxito"
+                    }
+                }
             }
         },
         "/orders": {

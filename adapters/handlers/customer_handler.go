@@ -12,15 +12,18 @@ import (
 type CustomerHandler struct {
 	createCustomer  *customerUseCases.CreateCustomerUseCase
 	getAllCustomers *customerUseCases.GetAllCustomersUseCase
+	deleteCustomer  *customerUseCases.DeleteCustomerUseCase
 }
 
 func NewCustomerHandler(
 	create *customerUseCases.CreateCustomerUseCase,
 	getAll *customerUseCases.GetAllCustomersUseCase,
+	delete *customerUseCases.DeleteCustomerUseCase,
 ) *CustomerHandler {
 	return &CustomerHandler{
 		createCustomer:  create,
 		getAllCustomers: getAll,
+		deleteCustomer:  delete,
 	}
 }
 
@@ -91,4 +94,24 @@ func (h *CustomerHandler) GetByID(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, customer)
+}
+
+// DeleteCustomer godoc
+// @Summary Eliminar un cliente
+// @Description Elimina un cliente específico utilizando su ID
+// @Tags customers
+// @Security BearerAuth
+// @Accept  json
+// @Produce  json
+// @Param id path string true "ID del cliente"
+// @Success 200 "Cliente eliminado con éxito"
+// @Router /customers/{id} [delete]
+func (h *CustomerHandler) Delete(c *gin.Context) {
+	customerID := c.Param("id")
+	err := h.deleteCustomer.Execute(customerID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Cliente eliminado con éxito"})
 }

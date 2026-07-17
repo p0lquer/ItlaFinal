@@ -13,7 +13,7 @@ import (
 	"log"
 	"os"
 
-	_ "ITLAFINAL/doc"
+	_ "ITLAFINAL/docs"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -58,7 +58,7 @@ func main() {
 	updateOrderStatus := orderUseCases.NewUpdateOrderStatusUseCase(orderRepo)
 
 	// 6. Handlers
-	customerHandler := handlers.NewCustomerHandler(createCustomer, getAllCustomers)
+	customerHandler := handlers.NewCustomerHandler(createCustomer, getAllCustomers, customerUseCases.NewDeleteCustomerUseCase(customerRepo))
 	getAllOrders := orderUseCases.NewGetAllOrdersUseCase(orderRepo)
 	deleteOrder := orderUseCases.NewDeleteOrderUseCase(orderRepo, predRepo)
 
