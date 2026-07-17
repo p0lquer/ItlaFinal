@@ -49,10 +49,13 @@ func main() {
 	customerRepo := repository.NewCustomerRepository(db)
 	orderRepo := repository.NewOrderRepository(db)
 	predRepo := repository.NewPredictionRepository(db)
+	stRepo := repository.NewServiceTypeRepository(db)
 
 	// 5. Use Cases
 	createCustomer := customerUseCases.NewCreateCustomerUseCase(customerRepo)
 	getAllCustomers := customerUseCases.NewGetAllCustomersUseCase(customerRepo)
+	getAllServiceTypes := orderUseCases.NewGetServiceTypeUseCase(stRepo)
+	createServiceType := orderUseCases.NewCreateServiceTypeUseCase(stRepo)
 
 	createOrder := orderUseCases.NewCreateOrderUseCase(orderRepo, predRepo)
 	updateOrderStatus := orderUseCases.NewUpdateOrderStatusUseCase(orderRepo)
@@ -61,6 +64,7 @@ func main() {
 	customerHandler := handlers.NewCustomerHandler(createCustomer, getAllCustomers, customerUseCases.NewDeleteCustomerUseCase(customerRepo))
 	getAllOrders := orderUseCases.NewGetAllOrdersUseCase(orderRepo)
 	deleteOrder := orderUseCases.NewDeleteOrderUseCase(orderRepo, predRepo)
+	serviceTypeHandler := handlers.NewServiceTypeHandler(getAllServiceTypes, createServiceType)
 
 	orderHandler := handlers.NewOrderHandler(createOrder, updateOrderStatus, getAllOrders, deleteOrder)
 
@@ -96,6 +100,7 @@ func main() {
 	api := r.Group("/api", middleware.AuthRequired())
 	{
 		api.GET("/auth/me", authHandler.Me)
+		api.GET("/service-types", serviceTypeHandler.GetAll)
 
 		// Órdenes — cualquier usuario autenticado puede ver
 		api.GET("/orders", orderHandler.GetAll)
@@ -107,13 +112,17 @@ func main() {
 			operator.POST("/orders", orderHandler.Create)
 			operator.PATCH("/orders/:id/status", orderHandler.UpdateStatus)
 			operator.DELETE("/orders/:id", orderHandler.Delete)
+			operator.POST("/service-types", serviceTypeHandler.Create)
 		}
-	}
+		// Clientes — solo operadores pueden crear/modificar/eliminar
+		operator = api.Group("/", middleware.OperatorOnly())
+		{
+			operator.POST("/customers", customerHandler.Create)
+			operator.GET("/customers", customerHandler.GetAll)
+			operator.GET("/customers/:id", customerHandler.GetByID)
+			operator.DELETE("/customers/:id", customerHandler.Delete)
+		}
 
-	{
-		api.POST("/customers", customerHandler.Create)
-		api.GET("/customers", customerHandler.GetAll)
-		api.GET("/customers/:id", customerHandler.GetByID)
 	}
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

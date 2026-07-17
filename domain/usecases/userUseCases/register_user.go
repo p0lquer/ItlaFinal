@@ -5,6 +5,7 @@ import (
 	"ITLAFINAL/domain/ports"
 	"errors"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -29,6 +30,8 @@ func NewRegisterUserUseCase(
 func (uc *RegisterUserUseCase) Execute(
 	name, email, password, phone, operatorKey string,
 ) (*models.User, error) {
+	email = strings.ToLower(email)
+
 	existing, err := uc.userRepo.FindByEmail(email)
 	if err != nil {
 		return nil, err
