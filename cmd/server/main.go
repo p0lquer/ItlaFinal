@@ -117,7 +117,7 @@ func main() {
 		// Clientes — solo operadores pueden crear/modificar/eliminar
 		operator = api.Group("/", middleware.OperatorOnly())
 		{
-			operator.POST("/customers", customerHandler.Create)
+			// operator.POST("/customers", customerHandler.Create)
 			operator.GET("/customers", customerHandler.GetAll)
 			operator.GET("/customers/:id", customerHandler.GetByID)
 			operator.DELETE("/customers/:id", customerHandler.Delete)

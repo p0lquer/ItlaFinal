@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"ITLAFINAL/adapters/dto"
+	//"ITLAFINAL/adapters/dto"
 	"ITLAFINAL/domain/usecases/customerUseCases"
 	"database/sql"
 	"net/http"
@@ -37,21 +37,21 @@ func NewCustomerHandler(
 // @Success 201 "Cliente creado con éxito"
 // @Router /customers [post]
 // @Param customer body dto.CreateCustomerRequest true "Customer data"
-func (h *CustomerHandler) Create(c *gin.Context) {
-	var req dto.CreateCustomerRequest
+// func (h *CustomerHandler) Create(c *gin.Context) {
+// 	var req dto.CreateCustomerRequest
 
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	customer, err := h.createCustomer.Execute(req.ID, req.Name, req.Phone, req.Email)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusCreated, customer)
+// 	if err := c.ShouldBindJSON(&req); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
+// 	customer, err := h.createCustomer.Execute(req.ID, req.Name, req.Phone, req.Email)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
+// 	c.JSON(http.StatusCreated, customer)
 
-}
+// }
 
 // GetAllCustomers godoc
 // @Summary Obtener todos los clientes
