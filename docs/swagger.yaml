@@ -1,5 +1,20 @@
 basePath: /api
 definitions:
+  dto.CreateCustomerRequest:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+    required:
+    - email
+    - name
+    - phone
+    type: object
   dto.CreateOrderRequest:
     properties:
       customer_id:
@@ -121,6 +136,27 @@ paths:
       security:
       - BearerAuth: []
       summary: Obtener todos los clientes
+      tags:
+      - customers
+    post:
+      consumes:
+      - application/json
+      description: Registra un nuevo cliente en la base de datos
+      parameters:
+      - description: Customer data
+        in: body
+        name: customer
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateCustomerRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Cliente creado con éxito
+      security:
+      - BearerAuth: []
+      summary: Crear un cliente
       tags:
       - customers
   /customers/{id}:

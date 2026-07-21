@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS service_types (
-    id          VARCHAR(36) PRIMARY KEY,
+    id          SERIAL PRIMARY KEY,
     name        VARCHAR(100) NOT NULL UNIQUE,
     description TEXT,
     created_at  TIMESTAMP NOT NULL DEFAULT NOW()

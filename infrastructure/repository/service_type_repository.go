@@ -17,7 +17,7 @@ func NewServiceTypeRepository(db *sql.DB) *ServiceTypeRepository {
 }
 
 func (r *ServiceTypeRepository) Create(serviceType *models.ServiceType) error {
-	_, err := r.db.Exec("INSERT INTO service_types (name, description, created_at) VALUES ($1, $2, $3, $4)",
+	_, err := r.db.Exec("INSERT INTO service_types (name, description, created_at) VALUES ($1, $2, $3)RETURNING id",
 		serviceType.Name, serviceType.Description, serviceType.CreatedAt,
 	)
 	return err
