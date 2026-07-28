@@ -1,6 +1,5 @@
 # Credenciales
-.env
-
+/*.env
 # Binario compilado
 /ITLAFINAL
 
