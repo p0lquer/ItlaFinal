@@ -1,7 +1,10 @@
 # Credenciales
 /*.env
-
+./.env
+env
 .env
+env.local
+env/
 # Binario compilado
 /ITLAFINAL
 
