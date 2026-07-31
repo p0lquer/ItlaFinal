@@ -3,6 +3,7 @@ package workers
 import (
 	"ITLAFINAL/domain/models"
 	"ITLAFINAL/domain/ports"
+	"ITLAFINAL/domain/usecases/orderUseCases"
 	"log"
 	"time"
 )
@@ -10,16 +11,22 @@ import (
 // TimerWorker corre en background con goroutines
 // Monitorea órdenes y notifica cuando el tiempo estimado llega
 type TimerWorker struct {
-	orderRepo ports.OrderRepository
-	notifier  ports.Notifier
-	interval  time.Duration
+	orderRepo         ports.OrderRepository
+	notifier          ports.Notifier
+	updateOrderStatus *orderUseCases.UpdateOrderStatusUseCase
+	interval          time.Duration
 }
 
-func NewTimerWorker(orderRepo ports.OrderRepository, notifier ports.Notifier) *TimerWorker {
+func NewTimerWorker(
+	orderRepo ports.OrderRepository,
+	updateOrderStatus *orderUseCases.UpdateOrderStatusUseCase,
+	notifier ports.Notifier,
+) *TimerWorker {
 	return &TimerWorker{
-		orderRepo: orderRepo,
-		notifier:  notifier,
-		interval:  30 * time.Second, // revisa cada 30 segundos
+		orderRepo:         orderRepo,
+		updateOrderStatus: updateOrderStatus,
+		notifier:          notifier,
+		interval:          5 * time.Second,
 	}
 }
 
@@ -46,12 +53,17 @@ func (w *TimerWorker) checkOrders() {
 			continue
 		}
 
-		deadline := order.CreatedAt.Add(order.EstimatedTime)
-
-		// Si ya pasó el tiempo estimado, notificar
-		if time.Now().After(deadline) {
-			log.Printf("🔔 Orden %s lista (tiempo estimado alcanzado)", order.ID)
-			_ = w.notifier.NotifyOrderReady(order.CustomerID, order.ID)
+		// Pasa por el mismo use case que usa el endpoint manual de status:
+		// así también queda guardado el dato de entrenamiento (peso + tiempo
+		// real) y se marca ready_at, sin duplicar esa lógica aquí. Además
+		// evita que sigamos re-notificando cada 30s: una vez que el status
+		// cambia a "lista", este mismo filtro de arriba ya la ignora.
+		if err := w.updateOrderStatus.Execute(order.ID, models.StatusReady); err != nil {
+			log.Printf("TimerWorker: error marcando %s como lista: %v", order.ID, err)
+			continue
 		}
+
+		log.Printf("🔔 Orden %s lista (tiempo estimado alcanzado)", order.ID)
+		_ = w.notifier.NotifyOrderReady(order.CustomerID, order.ID)
 	}
 }

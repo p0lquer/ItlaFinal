@@ -48,22 +48,17 @@ func (r *orderRepositoryPG) FindByID(id string) (*models.Order, error) {
 
 	var order models.Order
 	var estimatedMinutes float64
+	var readyAt sql.NullTime
+	var weight sql.NullFloat64
 
-	err := row.Scan(
-		&order.ID,
-		&order.CustomerID,
-		&order.ServiceType,
-		&order.PiecesCount,
-		&order.Notes,
-		&order.Status,
-		&estimatedMinutes,
-		&order.CreatedAt,
-		&order.UpdatedAt,
-	)
+	err := row.Scan(&order.ID, &order.CustomerID, &order.ServiceType, &order.PiecesCount,
+		&readyAt, &weight, &order.Notes, &order.Status, &estimatedMinutes, &order.CreatedAt, &order.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
-
+	if weight.Valid {
+		order.Weight = weight.Float64
+	}
 	order.EstimatedTime = time.Duration(estimatedMinutes) * time.Minute
 	return &order, nil
 }
@@ -91,10 +86,17 @@ func (r *orderRepositoryPG) FindAll() ([]*models.Order, error) {
 }
 
 func (r *orderRepositoryPG) UpdateStatus(id string, status models.OrderStatus) error {
-	_, err := r.db.Exec(`UPDATE orders SET status = $1, updated_at = $2 WHERE id = $3`, status, time.Now(), id)
+	now := time.Now()
+	_, err := r.db.Exec(
+		`UPDATE orders 
+		 SET status = $1, 
+		     updated_at = $2, 
+		     ready_at = CASE WHEN $1 = 'lista' THEN $2 ELSE ready_at END 
+		 WHERE id = $3`,
+		status, now, id,
+	)
 	return err
 }
-
 func (r *orderRepositoryPG) Delete(id string) error {
 	_, err := r.db.Exec(`DELETE FROM orders WHERE id = $1`, id)
 	return err

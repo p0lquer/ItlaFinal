@@ -26,8 +26,8 @@ CREATE TABLE IF NOT EXISTS predictions (
     id              VARCHAR(36) PRIMARY KEY,
     service_type    VARCHAR(50) NOT NULL,
     pieces_count    INT NOT NULL,
-    estimated       FLOAT NOT NULL,
-    actual          FLOAT,
+    estimated_time       FLOAT NOT NULL,
+    actual_time          FLOAT,
     created_at      TIMESTAMP NOT NULL DEFAULT NOW()
 );
 

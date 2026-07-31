@@ -61,8 +61,7 @@ func main() {
 	getMineOrders := orderUseCases.NewGetMineOrdersUseCase(orderRepo, uuid.Nil) // Aquí se pasa un userID vacío, se actualizará en el handler
 
 	createOrder := orderUseCases.NewCreateOrderUseCase(orderRepo, predRepo)
-	updateOrderStatus := orderUseCases.NewUpdateOrderStatusUseCase(orderRepo)
-
+	updateOrderStatus := orderUseCases.NewUpdateOrderStatusUseCase(orderRepo, predRepo)
 	// 6. Handlers
 	customerHandler := handlers.NewCustomerHandler(createCustomer, getAllCustomers, customerUseCases.NewDeleteCustomerUseCase(customerRepo))
 	getAllOrders := orderUseCases.NewGetAllOrdersUseCase(orderRepo)
@@ -72,7 +71,7 @@ func main() {
 	orderHandler := handlers.NewOrderHandler(createOrder, updateOrderStatus, getAllOrders, deleteOrder, getMineOrders)
 
 	// 7. Timer Worker en background
-	worker := workers.NewTimerWorker(orderRepo, hub)
+	worker := workers.NewTimerWorker(orderRepo, updateOrderStatus, hub)
 	go worker.Start()
 
 	//8. Auth

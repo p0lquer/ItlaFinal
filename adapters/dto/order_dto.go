@@ -6,10 +6,11 @@ import (
 )
 
 type CreateOrderRequest struct {
-	CustomerID  string `json:"customer_id"  binding:"required"`
-	ServiceType string `json:"service_type" binding:"required"`
-	PiecesCount int    `json:"pieces_count" binding:"required,min=1"`
-	Notes       string `json:"notes"`
+	CustomerID  string  `json:"customer_id"  binding:"required"`
+	ServiceType string  `json:"service_type" binding:"required"`
+	PiecesCount int     `json:"pieces_count" binding:"required,min=1"`
+	Weight      float64 `json:"weight" binding:"required,gt=0"`
+	Notes       string  `json:"notes"`
 }
 
 type UpdateStatusRequest struct {

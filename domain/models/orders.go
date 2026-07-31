@@ -22,4 +22,5 @@ type Order struct {
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	ReadyAt       *time.Time // nil hasta que esté lista
+	Weight        float64
 }

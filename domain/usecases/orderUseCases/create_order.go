@@ -3,6 +3,7 @@ package orderUseCases
 import (
 	"ITLAFINAL/domain/models"
 	"ITLAFINAL/domain/ports"
+	"ITLAFINAL/pkg/predictor"
 	"time"
 
 	"github.com/google/uuid"
@@ -27,50 +28,45 @@ func (uc *CreateOrderUseCase) Execute(
 	customerID, serviceType string,
 	piecesCount int,
 	notes string,
+	weight float64,
 ) (*models.Order, error) {
 
 	// 1. Obtener datos históricos para predecir
 	historicalData, err := uc.predRepo.GetHistoricalData(serviceType)
-	if err != nil || len(historicalData) == 0 {
+	if err != nil {
 		// Si no hay historial, usar estimado por defecto según tipo
-		historicalData = defaultEstimates(serviceType)
-	}
-
-	// 2. Calcular predicción
-	estimatedMinutes := weightedAverage(historicalData)
-	estimated := time.Duration(estimatedMinutes) * time.Minute
-
-	// 3. Crear la orden
-	order := &models.Order{
-		ID:            uuid.NewString(),
-		CustomerID:    customerID,
-		ServiceType:   serviceType,
-		PiecesCount:   piecesCount,
-		Notes:         notes,
-		Status:        models.StatusReceived,
-		EstimatedTime: estimated,
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
-	}
-
-	// 4. Persistir
-	if err := uc.orderRepo.Create(order); err != nil {
 		return nil, err
 	}
 
+	// 2. Calcular predicción
+	var estimatedMinutes float64
+	if len(historicalData) >= 2 {
+		predict := predictor.LinearRegression(historicalData)
+		estimatedMinutes = predict(weight)
+	} else {
+		estimatedMinutes = defaultEstimate(serviceType)
+	}
+	estimated := time.Duration(estimatedMinutes) * time.Minute
+
+	order := &models.Order{
+		ID: uuid.NewString(), CustomerID: customerID, ServiceType: serviceType,
+		PiecesCount: piecesCount, Weight: weight, Notes: notes,
+		Status: models.StatusReceived, EstimatedTime: estimated,
+		CreatedAt: time.Now(), UpdatedAt: time.Now(),
+	}
+
+	if err := uc.orderRepo.Create(order); err != nil {
+		return nil, err
+	}
 	return order, nil
 }
 
-func defaultEstimates(serviceType string) []float64 {
-	defaults := map[string][]float64{
-		"lavado_secado":  {60, 60, 60},
-		"planchado":      {30, 30, 30},
-		"lavado_en_seco": {120, 120, 120},
-	}
+func defaultEstimate(serviceType string) float64 {
+	defaults := map[string]float64{"lavado_secado": 60, "planchado": 30, "lavado_en_seco": 120}
 	if v, ok := defaults[serviceType]; ok {
 		return v
 	}
-	return []float64{60}
+	return 60
 }
 
 func weightedAverage(values []float64) float64 {

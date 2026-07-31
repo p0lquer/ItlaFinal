@@ -23,19 +23,22 @@ func WeightedAverage(historicalMinutes []float64) float64 {
 	return math.Round(weightedSum / totalWeight)
 }
 
-// LinearRegression predice el tiempo según cantidad de piezas.
-// Usa la fórmula: y = a + b*x
-// Donde x = piezas, y = tiempo estimado
-func LinearRegression(data []DataPoint) func(pieces int) float64 {
+// LinearRegression predice el tiempo según el peso (kg) de la orden.
+// Se asume que 'data' ya viene filtrado por tipo de servicio (una orden
+// de "planchado" no debería entrenar la predicción de "lavado en seco"),
+// así que el tipo de servicio queda implícito en qué dataset se pasa aquí,
+// no en la fórmula.
+// Usa la fórmula: y = a + b*x, donde x = peso (kg), y = tiempo estimado
+func LinearRegression(data []DataPoint) func(weight float64) float64 {
 	if len(data) < 2 {
-		return func(pieces int) float64 { return 60 }
+		return func(weight float64) float64 { return 60 }
 	}
 
 	n := float64(len(data))
 	sumX, sumY, sumXY, sumX2 := 0.0, 0.0, 0.0, 0.0
 
 	for _, p := range data {
-		x := float64(p.Pieces)
+		x := p.Weight
 		y := p.ActualMinutes
 		sumX += x
 		sumY += y
@@ -48,17 +51,17 @@ func LinearRegression(data []DataPoint) func(pieces int) float64 {
 		// If all historical jobs had the exact same number of pieces,
 		// we can't find a slope. Just return the average time.
 		averageTime := sumY / n
-		return func(pieces int) float64 { return averageTime }
+		return func(weight float64) float64 { return averageTime }
 	}
 
 	// Calcular pendiente (b) e intercepto (a)
 	b := (n*sumXY - sumX*sumY) / denominator
 	a := (sumY - b*sumX) / n
 
-	return func(pieces int) float64 {
-		result := a + b*float64(pieces)
-		if result < 20 {
-			return 20 // mínimo 20 minutos
+	return func(weight float64) float64 {
+		result := a + b*weight
+		if result < 15 {
+			return 15 // mínimo 15 minutos
 		}
 		return math.Round(result)
 	}
@@ -66,6 +69,7 @@ func LinearRegression(data []DataPoint) func(pieces int) float64 {
 
 // DataPoint representa un registro histórico para regresión
 type DataPoint struct {
-	Pieces        int
+	Weight        float64
 	ActualMinutes float64
+	Pieces        int
 }
