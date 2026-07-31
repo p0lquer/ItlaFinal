@@ -5,6 +5,7 @@ package repository
 import (
 	"ITLAFINAL/domain/models"
 	"ITLAFINAL/domain/ports"
+	"ITLAFINAL/pkg/predictor"
 	"database/sql"
 	"time"
 )
@@ -75,24 +76,28 @@ func (r *predictRepositoryPG) FindByServiceType(serviceType string) ([]*models.P
 	return predictions, rows.Err()
 }
 
-func (r *predictRepositoryPG) GetHistoricalData(serviceType string) ([]float64, error) {
-	// Solo tomamos en cuenta los que tienen tiempo real (ya finalizados)
-	query := `SELECT actual_time FROM predictions WHERE service_type = $1 AND actual_time IS NOT NULL`
-
+func (r *predictRepositoryPG) GetHistoricalData(serviceType string) ([]predictor.DataPoint, error) {
+	// Solo tomamos en cuenta los que tienen tiempo real (ya finalizados) Y peso
+	// registrado — órdenes viejas, previas a esta migración, tendrán weight NULL
+	// y no sirven como punto de entrenamiento para la regresión por peso.
+	query := `
+		SELECT weight, actual_time
+		FROM predictions
+		WHERE service_type = $1 AND actual_time IS NOT NULL AND weight IS NOT NULL
+	`
 	rows, err := r.db.Query(query, serviceType)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var historical []float64
+	var historical []predictor.DataPoint
 	for rows.Next() {
-		var actMins float64
-		if err := rows.Scan(&actMins); err != nil {
+		var weight, actMins float64
+		if err := rows.Scan(&weight, &actMins); err != nil {
 			return nil, err
 		}
-		historical = append(historical, actMins)
+		historical = append(historical, predictor.DataPoint{Weight: weight, ActualMinutes: actMins})
 	}
-
 	return historical, rows.Err()
 }

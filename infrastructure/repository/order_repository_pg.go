@@ -46,22 +46,16 @@ func (r *orderRepositoryPG) FindByID(id string) (*models.Order, error) {
 
 	var order models.Order
 	var estimatedMinutes float64
+	var weight sql.NullFloat64
 
-	err := row.Scan(
-		&order.ID,
-		&order.CustomerID,
-		&order.ServiceType,
-		&order.PiecesCount,
-		&order.Notes,
-		&order.Status,
-		&estimatedMinutes,
-		&order.CreatedAt,
-		&order.UpdatedAt,
-	)
+	err := row.Scan(&order.ID, &order.CustomerID, &order.ServiceType, &order.PiecesCount,
+		&weight, &order.Notes, &order.Status, &estimatedMinutes, &order.CreatedAt, &order.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
-
+	if weight.Valid {
+		order.Weight = weight.Float64
+	}
 	order.EstimatedTime = time.Duration(estimatedMinutes) * time.Minute
 	return &order, nil
 }
