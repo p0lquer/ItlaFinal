@@ -30,6 +30,8 @@ func (uc *UpdateOrderStatusUseCase) Execute(orderID string, status models.OrderS
 			return err
 		}
 		actual := time.Since(order.CreatedAt)
+		// No se propaga el error: si falla el guardado del dato de entrenamiento,
+		// no queremos que la actualización de estado (que ya se aplicó) falle.
 		_ = uc.predRepo.Save(&models.Prediction{
 			ID: uuid.NewString(), ServiceType: order.ServiceType, PiecesCount: order.PiecesCount,
 			Weight: order.Weight, Estimated: order.EstimatedTime, Actual: &actual, CreatedAt: time.Now(),
