@@ -46,7 +46,7 @@ func (h *OrderHandler) Create(c *gin.Context) {
 		return
 	}
 
-	order, err := h.createOrder.Execute(req.CustomerID, req.ServiceType, req.PiecesCount, req.Notes)
+	order, err := h.createOrder.Execute(req.CustomerID, req.ServiceType, req.PiecesCount, req.Notes, req.Weight)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

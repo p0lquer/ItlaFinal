@@ -58,8 +58,7 @@ func main() {
 	createServiceType := orderUseCases.NewCreateServiceTypeUseCase(stRepo)
 
 	createOrder := orderUseCases.NewCreateOrderUseCase(orderRepo, predRepo)
-	updateOrderStatus := orderUseCases.NewUpdateOrderStatusUseCase(orderRepo)
-
+	updateOrderStatus := orderUseCases.NewUpdateOrderStatusUseCase(orderRepo, predRepo)
 	// 6. Handlers
 	customerHandler := handlers.NewCustomerHandler(createCustomer, getAllCustomers, customerUseCases.NewDeleteCustomerUseCase(customerRepo))
 	getAllOrders := orderUseCases.NewGetAllOrdersUseCase(orderRepo)

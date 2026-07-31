@@ -9,4 +9,5 @@ type Prediction struct {
 	Estimated   time.Duration  // tiempo estimado calculado
 	Actual      *time.Duration // tiempo real (se llena al finalizar)
 	CreatedAt   time.Time
+	Weight      float64
 }
