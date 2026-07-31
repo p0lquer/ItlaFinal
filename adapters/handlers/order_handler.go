@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 type OrderHandler struct {
@@ -13,6 +14,7 @@ type OrderHandler struct {
 	updateOrderStatus *orderUseCases.UpdateOrderStatusUseCase
 	getAllOrders      *orderUseCases.GetAllOrdersUseCase
 	deleteOrder       *orderUseCases.DeleteOrderUseCase
+	getMineOrders     *orderUseCases.GetMineOrdersUseCase
 }
 
 func NewOrderHandler(
@@ -20,6 +22,7 @@ func NewOrderHandler(
 	update *orderUseCases.UpdateOrderStatusUseCase,
 	getAll *orderUseCases.GetAllOrdersUseCase,
 	delete *orderUseCases.DeleteOrderUseCase,
+	getMine *orderUseCases.GetMineOrdersUseCase,
 ) *OrderHandler {
 	return &OrderHandler{
 		createOrder:       create,
@@ -126,4 +129,30 @@ func (h *OrderHandler) Delete(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "orden eliminada correctamente"})
 
+}
+
+// @GetMineOrders godoc
+// @Summary Obtener mis órdenes
+// @Description Recupera la lista de órdenes asociadas al usuario autenticado
+// @Tags orders
+// @Security BearerAuth
+// @Accept  json
+// @Produce  json
+// @Success 200 "Lista de órdenes obtenida con éxito"
+// @Router /orders/mine [get]
+func (h *OrderHandler) GetMine(c *gin.Context) {
+	userID := c.GetString("user_id") // Obtener el userID del contexto
+	userIDUUID, err := uuid.Parse(userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+		return
+	}
+
+	orders, err := h.getMineOrders.Execute(userIDUUID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, orders)
 }

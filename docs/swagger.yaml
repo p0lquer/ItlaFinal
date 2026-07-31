@@ -283,6 +283,21 @@ paths:
       summary: Actualizar el estado de una orden
       tags:
       - orders
+  /orders/mine:
+    get:
+      consumes:
+      - application/json
+      description: Recupera la lista de órdenes asociadas al usuario autenticado
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de órdenes obtenida con éxito
+      security:
+      - BearerAuth: []
+      summary: Obtener mis órdenes
+      tags:
+      - orders
   /users/{id}:
     delete:
       consumes:
