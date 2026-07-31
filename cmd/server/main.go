@@ -68,7 +68,7 @@ func main() {
 	orderHandler := handlers.NewOrderHandler(createOrder, updateOrderStatus, getAllOrders, deleteOrder)
 
 	// 7. Timer Worker en background
-	worker := workers.NewTimerWorker(orderRepo, hub)
+	worker := workers.NewTimerWorker(orderRepo, updateOrderStatus, hub)
 	go worker.Start()
 
 	//8. Auth

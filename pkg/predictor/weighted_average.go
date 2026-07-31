@@ -60,8 +60,8 @@ func LinearRegression(data []DataPoint) func(weight float64) float64 {
 
 	return func(weight float64) float64 {
 		result := a + b*weight
-		if result < 20 {
-			return 20 // mínimo 20 minutos
+		if result < 15 {
+			return 15 // mínimo 15 minutos
 		}
 		return math.Round(result)
 	}
