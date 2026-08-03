@@ -1,6 +1,10 @@
 package ports
 
-import "ITLAFINAL/domain/models"
+import (
+	"ITLAFINAL/domain/models"
+
+	"github.com/google/uuid"
+)
 
 type OrderRepository interface {
 	Create(order *models.Order) error

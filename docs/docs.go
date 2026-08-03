@@ -286,6 +286,31 @@ const docTemplate = `{
                 }
             }
         },
+        "/orders/mine": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Recupera la lista de órdenes asociadas al usuario autenticado",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Obtener mis órdenes",
+                "responses": {
+                    "200": {
+                        "description": "Lista de órdenes obtenida con éxito"
+                    }
+                }
+            }
+        },
         "/orders/{id}": {
             "put": {
                 "security": [

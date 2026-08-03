@@ -7,6 +7,8 @@ import (
 	"ITLAFINAL/domain/ports"
 	"database/sql"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type orderRepositoryPG struct {
@@ -124,4 +126,26 @@ func (r *orderRepositoryPG) UpdateStatus(id string, status models.OrderStatus) e
 func (r *orderRepositoryPG) Delete(id string) error {
 	_, err := r.db.Exec(`DELETE FROM orders WHERE id = $1`, id)
 	return err
+}
+
+func (r *orderRepositoryPG) FindByUserID(userID uuid.UUID) ([]*models.Order, error) {
+	query := `SELECT id, customer_id, service_type, pieces_count, notes, status, estimated_time, created_at, updated_at FROM orders WHERE customer_id = $1 ORDER BY created_at DESC`
+	rows, err := r.db.Query(query, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var orders []*models.Order
+	for rows.Next() {
+		var order models.Order
+		var estimatedMinutes float64
+		if err := rows.Scan(&order.ID, &order.CustomerID, &order.ServiceType, &order.PiecesCount, &order.Notes, &order.Status, &estimatedMinutes, &order.CreatedAt, &order.UpdatedAt); err != nil {
+			return nil, err
+		}
+		order.EstimatedTime = time.Duration(estimatedMinutes) * time.Minute
+		orders = append(orders, &order)
+	}
+	return orders, nil
 }
