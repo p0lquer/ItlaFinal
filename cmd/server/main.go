@@ -20,7 +20,6 @@ import (
 	"github.com/joho/godotenv"
 	swaggerFiles "github.com/swaggo/files"
 
-	"github.com/google/uuid"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	// @title ITLAFINAL API
 	// @version 1.0
@@ -58,8 +57,6 @@ func main() {
 	getAllServiceTypes := orderUseCases.NewGetServiceTypeUseCase(stRepo)
 	createServiceType := orderUseCases.NewCreateServiceTypeUseCase(stRepo)
 
-	getMineOrders := orderUseCases.NewGetMineOrdersUseCase(orderRepo, uuid.Nil) // Aquí se pasa un userID vacío, se actualizará en el handler
-
 	createOrder := orderUseCases.NewCreateOrderUseCase(orderRepo, predRepo)
 	updateOrderStatus := orderUseCases.NewUpdateOrderStatusUseCase(orderRepo, predRepo)
 	// 6. Handlers
@@ -69,7 +66,7 @@ func main() {
 	deleteOrder := orderUseCases.NewDeleteOrderUseCase(orderRepo, predRepo)
 	serviceTypeHandler := handlers.NewServiceTypeHandler(getAllServiceTypes, createServiceType)
 
-  	orderHandler := handlers.NewOrderHandler(createOrder, updateOrderStatus, getAllOrders, getMyOrders, deleteOrder)
+	orderHandler := handlers.NewOrderHandler(createOrder, updateOrderStatus, getAllOrders, getMyOrders, deleteOrder)
 
 	// 7. Timer Worker en background
 	worker := workers.NewTimerWorker(orderRepo, updateOrderStatus, hub)
@@ -109,7 +106,6 @@ func main() {
 
 		// Órdenes — cualquier usuario autenticado puede ver
 		api.GET("/orders", orderHandler.GetAll)
-		api.GET("/orders/mine", orderHandler.GetMine)
 
 		// Órdenes — solo operadores pueden crear/modificar/eliminar
 		operator := api.Group("/", middleware.OperatorOnly())

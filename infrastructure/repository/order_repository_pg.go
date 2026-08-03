@@ -85,9 +85,9 @@ func (r *orderRepositoryPG) FindAll() ([]*models.Order, error) {
 	return orders, nil
 }
 
-func (r *orderRepositoryPG) FindByUserID(userID string) ([]*models.Order, error) {
-	return r.FindByCustomerID(userID)
-}
+// func (r *orderRepositoryPG) FindByUserID(userID string) ([]*models.Order, error) {
+// 	return r.FindByCustomerID(userID)
+// }
 
 func (r *orderRepositoryPG) FindByCustomerID(customerID string) ([]*models.Order, error) {
 	query := `SELECT id, customer_id, service_type, pieces_count, notes, status, estimated_time, created_at, updated_at FROM orders WHERE customer_id = $1 ORDER BY created_at DESC`
