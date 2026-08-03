@@ -13,6 +13,7 @@ type OrderHandler struct {
 	createOrder       *orderUseCases.CreateOrderUseCase
 	updateOrderStatus *orderUseCases.UpdateOrderStatusUseCase
 	getAllOrders      *orderUseCases.GetAllOrdersUseCase
+	getMyOrders       *orderUseCases.GetMyOrdersUseCase
 	deleteOrder       *orderUseCases.DeleteOrderUseCase
 	getMineOrders     *orderUseCases.GetMineOrdersUseCase
 }
@@ -21,6 +22,7 @@ func NewOrderHandler(
 	create *orderUseCases.CreateOrderUseCase,
 	update *orderUseCases.UpdateOrderStatusUseCase,
 	getAll *orderUseCases.GetAllOrdersUseCase,
+	getMy *orderUseCases.GetMyOrdersUseCase,
 	delete *orderUseCases.DeleteOrderUseCase,
 	getMine *orderUseCases.GetMineOrdersUseCase,
 ) *OrderHandler {
@@ -28,6 +30,7 @@ func NewOrderHandler(
 		createOrder:       create,
 		updateOrderStatus: update,
 		getAllOrders:      getAll,
+		getMyOrders:       getMy,
 		deleteOrder:       delete,
 	}
 }
@@ -49,7 +52,16 @@ func (h *OrderHandler) Create(c *gin.Context) {
 		return
 	}
 
-	order, err := h.createOrder.Execute(req.CustomerID, req.ServiceType, req.PiecesCount, req.Notes, req.Weight)
+	customerID := req.CustomerID
+	if customerID == "" || (c.GetString("role") == "customer" && customerID != c.GetString("user_id")) {
+		customerID = c.GetString("user_id")
+	}
+	if customerID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "customer_id requerido"})
+		return
+	}
+
+	order, err := h.createOrder.Execute(customerID, req.ServiceType, req.PiecesCount, req.Notes, req.Weight)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -74,6 +86,16 @@ func (h *OrderHandler) Create(c *gin.Context) {
 // @Router /orders [get]
 func (h *OrderHandler) GetAll(c *gin.Context) {
 	orders, err := h.getAllOrders.Execute()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, orders)
+}
+
+func (h *OrderHandler) GetMy(c *gin.Context) {
+	customerID := c.GetString("user_id")
+	orders, err := h.getMyOrders.Execute(customerID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

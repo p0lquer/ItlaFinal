@@ -85,6 +85,32 @@ func (r *orderRepositoryPG) FindAll() ([]*models.Order, error) {
 	return orders, nil
 }
 
+func (r *orderRepositoryPG) FindByUserID(userID string) ([]*models.Order, error) {
+	return r.FindByCustomerID(userID)
+}
+
+func (r *orderRepositoryPG) FindByCustomerID(customerID string) ([]*models.Order, error) {
+	query := `SELECT id, customer_id, service_type, pieces_count, notes, status, estimated_time, created_at, updated_at FROM orders WHERE customer_id = $1 ORDER BY created_at DESC`
+
+	rows, err := r.db.Query(query, customerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var orders []*models.Order
+	for rows.Next() {
+		var order models.Order
+		var estimatedMinutes float64
+		if err := rows.Scan(&order.ID, &order.CustomerID, &order.ServiceType, &order.PiecesCount, &order.Notes, &order.Status, &estimatedMinutes, &order.CreatedAt, &order.UpdatedAt); err != nil {
+			return nil, err
+		}
+		order.EstimatedTime = time.Duration(estimatedMinutes) * time.Minute
+		orders = append(orders, &order)
+	}
+	return orders, nil
+}
+
 func (r *orderRepositoryPG) UpdateStatus(id string, status models.OrderStatus) error {
 	now := time.Now()
 	_, err := r.db.Exec(

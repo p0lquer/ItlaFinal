@@ -65,10 +65,11 @@ func main() {
 	// 6. Handlers
 	customerHandler := handlers.NewCustomerHandler(createCustomer, getAllCustomers, customerUseCases.NewDeleteCustomerUseCase(customerRepo))
 	getAllOrders := orderUseCases.NewGetAllOrdersUseCase(orderRepo)
+	getMyOrders := orderUseCases.NewGetMyOrdersUseCase(orderRepo)
 	deleteOrder := orderUseCases.NewDeleteOrderUseCase(orderRepo, predRepo)
 	serviceTypeHandler := handlers.NewServiceTypeHandler(getAllServiceTypes, createServiceType)
 
-	orderHandler := handlers.NewOrderHandler(createOrder, updateOrderStatus, getAllOrders, deleteOrder, getMineOrders)
+  	orderHandler := handlers.NewOrderHandler(createOrder, updateOrderStatus, getAllOrders, getMyOrders, deleteOrder)
 
 	// 7. Timer Worker en background
 	worker := workers.NewTimerWorker(orderRepo, updateOrderStatus, hub)
@@ -103,6 +104,8 @@ func main() {
 	{
 		api.GET("/auth/me", authHandler.Me)
 		api.GET("/service-types", serviceTypeHandler.GetAll)
+		api.GET("/orders/mine", orderHandler.GetMy)
+		api.POST("/orders", orderHandler.Create)
 
 		// Órdenes — cualquier usuario autenticado puede ver
 		api.GET("/orders", orderHandler.GetAll)
@@ -112,7 +115,6 @@ func main() {
 		operator := api.Group("/", middleware.OperatorOnly())
 		{
 			operator.DELETE("/users/:id", authHandler.DeleteUser)
-			operator.POST("/orders", orderHandler.Create)
 			operator.PATCH("/orders/:id/status", orderHandler.UpdateStatus)
 			operator.DELETE("/orders/:id", orderHandler.Delete)
 			operator.POST("/service-types", serviceTypeHandler.Create)
@@ -124,6 +126,7 @@ func main() {
 			operator.GET("/customers", customerHandler.GetAll)
 			operator.GET("/customers/:id", customerHandler.GetByID)
 			operator.DELETE("/customers/:id", customerHandler.Delete)
+
 		}
 
 	}
