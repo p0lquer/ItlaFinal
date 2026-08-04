@@ -68,6 +68,7 @@ func (h *OrderHandler) Create(c *gin.Context) {
 		ID:            order.ID,
 		Status:        string(order.Status),
 		EstimatedTime: order.EstimatedTime.Minutes(),
+		EstimatedCost: order.EstimatedCost,
 		CreatedAt:     order.CreatedAt,
 	})
 }

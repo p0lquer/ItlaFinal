@@ -19,6 +19,7 @@ type Order struct {
 	PiecesCount   int
 	Notes         string
 	EstimatedTime time.Duration
+	EstimatedCost float64
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	ReadyAt       *time.Time // nil hasta que esté lista

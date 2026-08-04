@@ -38,7 +38,7 @@ func (h *ServiceTypeHandler) Create(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	serviceType, err := h.create.Execute(req.Name, req.Description)
+	serviceType, err := h.create.Execute(req.Name, req.Description, req.BasePrice, req.PricePerWeight, req.PricePerPiece)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

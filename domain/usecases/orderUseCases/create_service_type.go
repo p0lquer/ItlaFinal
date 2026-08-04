@@ -16,7 +16,7 @@ func NewCreateServiceTypeUseCase(repo ports.ServiceTypeRepository) *CreateServic
 	return &CreateServiceTypeUseCase{repo: repo}
 }
 
-func (uc *CreateServiceTypeUseCase) Execute(name, description string) (*models.ServiceType, error) {
+func (uc *CreateServiceTypeUseCase) Execute(name, description string, basePrice, pricePerWeight, pricePerPiece float64) (*models.ServiceType, error) {
 	existing, err := uc.repo.FindByName(name)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, err
@@ -25,9 +25,12 @@ func (uc *CreateServiceTypeUseCase) Execute(name, description string) (*models.S
 		return nil, errors.New("service type with the same name already exists")
 	}
 	serviceType := &models.ServiceType{
-		Name:        name,
-		Description: description,
-		CreatedAt:   time.Now(),
+		Name:           name,
+		Description:    description,
+		BasePrice:      basePrice,
+		PricePerWeight: pricePerWeight,
+		PricePerPiece:  pricePerPiece,
+		CreatedAt:      time.Now(),
 	}
 
 	if err := uc.repo.Create(serviceType); err != nil {
