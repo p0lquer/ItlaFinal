@@ -84,7 +84,6 @@ func (uc *CreateOrderUseCase) Execute(
 
 func defaultEstimate(serviceType string) float64 {
 	defaults := map[string]float64{
-		"lavado_secado":   60,
 		"lavado_y_secado": 60,
 		"planchado":       30,
 		"lavado_en_seco":  120,

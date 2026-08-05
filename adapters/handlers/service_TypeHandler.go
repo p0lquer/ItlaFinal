@@ -3,6 +3,7 @@ package handlers
 import (
 	"ITLAFINAL/adapters/dto"
 	"ITLAFINAL/domain/usecases/orderUseCases"
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -59,8 +60,12 @@ func (h *ServiceTypeHandler) Create(c *gin.Context) {
 	}
 	serviceType, err := h.create.Execute(req.Name, req.Description, req.BasePrice, req.PricePerWeight, req.PricePerPiece)
 	if err != nil {
+		if errors.Is(err, orderUseCases.ErrServiceTypeAlreadyExists) {
+			c.JSON(http.StatusConflict, gin.H{"message": err.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, serviceType)
+	c.JSON(http.StatusCreated, gin.H{"message": "service type created successfully", "service_type": serviceType})
 }

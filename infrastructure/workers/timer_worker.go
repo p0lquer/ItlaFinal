@@ -53,6 +53,10 @@ func (w *TimerWorker) checkOrders() {
 			continue
 		}
 
+		if time.Since(order.CreatedAt) < order.EstimatedTime {
+			continue
+		}
+
 		// Pasa por el mismo use case que usa el endpoint manual de status:
 		// así también queda guardado el dato de entrenamiento (peso + tiempo
 		// real) y se marca ready_at, sin duplicar esa lógica aquí. Además

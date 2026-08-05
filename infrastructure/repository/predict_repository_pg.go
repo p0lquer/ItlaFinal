@@ -23,7 +23,7 @@ func NewPredictionRepository(db *sql.DB) ports.PredictionRepository {
 
 func (r *predictRepositoryPG) Save(prediction *models.Prediction) error {
 	query := `
-        INSERT INTO predictions (id, service_type, pieces_count, estimated_time, actual_time, weight, created_at)
+        INSERT INTO predictions (id, service_type, pieces_count, estimated, actual, weight, created_at)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
     `
 	var actualMins *float64

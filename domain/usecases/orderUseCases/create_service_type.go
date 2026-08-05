@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+var ErrServiceTypeAlreadyExists = errors.New("service type with the same name already exists")
+
 type CreateServiceTypeUseCase struct {
 	repo ports.ServiceTypeRepository
 }
@@ -22,7 +24,7 @@ func (uc *CreateServiceTypeUseCase) Execute(name, description string, basePrice,
 		return nil, err
 	}
 	if existing != nil {
-		return nil, errors.New("service type with the same name already exists")
+		return nil, ErrServiceTypeAlreadyExists
 	}
 	serviceType := &models.ServiceType{
 		Name:           name,

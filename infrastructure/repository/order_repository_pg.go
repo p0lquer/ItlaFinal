@@ -138,9 +138,9 @@ func (r *orderRepositoryPG) UpdateStatus(id string, status models.OrderStatus) e
 		`UPDATE orders 
 		 SET status = $1, 
 		     updated_at = $2, 
-		     ready_at = CASE WHEN $1 = 'lista' THEN $2 ELSE ready_at END 
+		     ready_at = CASE WHEN $1::text = 'lista' THEN $2 ELSE ready_at END 
 		 WHERE id = $3`,
-		status, now, id,
+		string(status), now, id,
 	)
 	return err
 }
