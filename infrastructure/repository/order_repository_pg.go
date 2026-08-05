@@ -43,8 +43,47 @@ func (r *orderRepositoryPG) Create(order *models.Order) error {
 	return err
 }
 
+func scanOrder(scan func(dest ...any) error) (*models.Order, error) {
+	var order models.Order
+	var estimatedMinutes float64
+	var weight, price sql.NullFloat64
+	var readyAt sql.NullTime
+
+	err := scan(
+		&order.ID,
+		&order.CustomerID,
+		&order.ServiceType,
+		&order.PiecesCount,
+		&weight,
+		&price,
+		&order.Notes,
+		&order.Status,
+		&estimatedMinutes,
+		&order.CreatedAt,
+		&order.UpdatedAt,
+		&readyAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if weight.Valid {
+		order.Weight = weight.Float64
+	}
+	if price.Valid {
+		order.EstimatedCost = price.Float64
+	}
+	if readyAt.Valid {
+		order.ReadyAt = &readyAt.Time
+	}
+	order.EstimatedTime = time.Duration(estimatedMinutes) * time.Minute
+	return &order, nil
+}
+
+const orderColumns = "id, customer_id, service_type, pieces_count, weight, price, notes, status, estimated_time, created_at, updated_at, ready_at"
+
 func (r *orderRepositoryPG) FindByID(id string) (*models.Order, error) {
-	query := `SELECT id, customer_id, service_type, pieces_count, notes, status, estimated_time, estimated_cost, weight, created_at, updated_at, ready_at FROM orders WHERE id = $1`
+	query := `SELECT ` + orderColumns + ` FROM orders WHERE id = $1`
 
 	row := r.db.QueryRow(query, id)
 
@@ -52,9 +91,10 @@ func (r *orderRepositoryPG) FindByID(id string) (*models.Order, error) {
 	var estimatedMinutes float64
 	var readyAt sql.NullTime
 	var weight sql.NullFloat64
+	var price sql.NullFloat64
 
 	err := row.Scan(&order.ID, &order.CustomerID, &order.ServiceType, &order.PiecesCount,
-		&order.Notes, &order.Status, &estimatedMinutes, &order.EstimatedCost, &weight, &order.CreatedAt, &order.UpdatedAt, &readyAt)
+		&price, &order.Notes, &order.Status, &estimatedMinutes, &order.EstimatedCost, &weight, &order.CreatedAt, &order.UpdatedAt, &readyAt)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +109,7 @@ func (r *orderRepositoryPG) FindByID(id string) (*models.Order, error) {
 }
 
 func (r *orderRepositoryPG) FindAll() ([]*models.Order, error) {
-	query := `SELECT id, customer_id, service_type, pieces_count, notes, status, estimated_time, estimated_cost, weight, created_at, updated_at, ready_at FROM orders ORDER BY created_at DESC`
+	query := `SELECT ` + orderColumns + ` FROM orders ORDER BY created_at DESC`
 
 	rows, err := r.db.Query(query)
 	if err != nil {
@@ -79,33 +119,17 @@ func (r *orderRepositoryPG) FindAll() ([]*models.Order, error) {
 
 	var orders []*models.Order
 	for rows.Next() {
-		var order models.Order
-		var estimatedMinutes float64
-		var weight sql.NullFloat64
-		var readyAt sql.NullTime
-		if err := rows.Scan(&order.ID, &order.CustomerID, &order.ServiceType, &order.PiecesCount, &order.Notes, &order.Status, &estimatedMinutes, &order.EstimatedCost, &weight, &order.CreatedAt, &order.UpdatedAt, &readyAt); err != nil {
+		order, err := scanOrder(rows.Scan)
+		if err != nil {
 			return nil, err
 		}
-		order.EstimatedTime = time.Duration(estimatedMinutes) * time.Minute
-		if weight.Valid {
-			order.Weight = weight.Float64
-		}
-		if readyAt.Valid {
-			order.ReadyAt = &readyAt.Time
-		}
-		orders = append(orders, &order)
+		orders = append(orders, order)
 	}
-	return orders, nil
+	return orders, rows.Err()
 }
 
-// func (r *orderRepositoryPG) FindByUserID(userID string) ([]*models.Order, error) {
-// 	return r.FindByCustomerID(userID)
-// }
-
 func (r *orderRepositoryPG) FindByCustomerID(customerID string) ([]*models.Order, error) {
-	query := `SELECT id, customer_id, service_type, pieces_count, notes, status, estimated_time, estimated_cost, weight, created_at, updated_at, ready_at FROM orders WHERE customer_id = $1 ORDER BY created_at DESC`
-
-	rows, err := r.db.Query(query, customerID)
+	rows, err := r.db.Query(`SELECT `+orderColumns+` FROM orders WHERE customer_id = $1 ORDER BY created_at DESC`, customerID)
 	if err != nil {
 		return nil, err
 	}
@@ -113,23 +137,13 @@ func (r *orderRepositoryPG) FindByCustomerID(customerID string) ([]*models.Order
 
 	var orders []*models.Order
 	for rows.Next() {
-		var order models.Order
-		var estimatedMinutes float64
-		var weight sql.NullFloat64
-		var readyAt sql.NullTime
-		if err := rows.Scan(&order.ID, &order.CustomerID, &order.ServiceType, &order.PiecesCount, &order.Notes, &order.Status, &estimatedMinutes, &order.EstimatedCost, &weight, &order.CreatedAt, &order.UpdatedAt, &readyAt); err != nil {
+		order, err := scanOrder(rows.Scan)
+		if err != nil {
 			return nil, err
 		}
-		order.EstimatedTime = time.Duration(estimatedMinutes) * time.Minute
-		if weight.Valid {
-			order.Weight = weight.Float64
-		}
-		if readyAt.Valid {
-			order.ReadyAt = &readyAt.Time
-		}
-		orders = append(orders, &order)
+		orders = append(orders, order)
 	}
-	return orders, nil
+	return orders, rows.Err()
 }
 
 func (r *orderRepositoryPG) UpdateStatus(id string, status models.OrderStatus) error {
@@ -138,9 +152,9 @@ func (r *orderRepositoryPG) UpdateStatus(id string, status models.OrderStatus) e
 		`UPDATE orders 
 		 SET status = $1, 
 		     updated_at = $2, 
-		     ready_at = CASE WHEN $1::text = 'lista' THEN $2 ELSE ready_at END 
+		     ready_at = CASE WHEN $1::varchar = 'lista' THEN $2 ELSE ready_at END 
 		 WHERE id = $3`,
-		string(status), now, id,
+		status, now, id,
 	)
 	return err
 }
@@ -148,7 +162,6 @@ func (r *orderRepositoryPG) Delete(id string) error {
 	_, err := r.db.Exec(`DELETE FROM orders WHERE id = $1`, id)
 	return err
 }
-
 func (r *orderRepositoryPG) FindByUserID(userID uuid.UUID) ([]*models.Order, error) {
 	query := `SELECT id, customer_id, service_type, pieces_count, notes, status, estimated_time, estimated_cost, weight, created_at, updated_at, ready_at FROM orders WHERE customer_id = $1 ORDER BY created_at DESC`
 	rows, err := r.db.Query(query, userID)
