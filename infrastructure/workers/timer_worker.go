@@ -49,11 +49,14 @@ func (w *TimerWorker) checkOrders() {
 	}
 
 	for _, order := range orders {
+
+		actualDuration := time.Since(order.CreatedAt)
+
 		if order.Status != models.StatusProcessing {
 			continue
 		}
 
-		if time.Since(order.CreatedAt) < order.EstimatedTime {
+		if actualDuration < order.EstimatedTime {
 			continue
 		}
 
@@ -68,6 +71,6 @@ func (w *TimerWorker) checkOrders() {
 		}
 
 		log.Printf("🔔 Orden %s lista (tiempo estimado alcanzado)", order.ID)
-		_ = w.notifier.NotifyOrderReady(order.CustomerID, order.ID)
+		// _ = w.notifier.NotifyOrderReady(order.CustomerID, order.ID)
 	}
 }

@@ -18,9 +18,15 @@ type UpdateStatusRequest struct {
 }
 
 type OrderResponse struct {
-	ID            string    `json:"id"`
-	Status        string    `json:"status"`
-	EstimatedTime float64   `json:"estimated_time_minutes"`
-	EstimatedCost float64   `json:"estimated_cost"`
-	CreatedAt     time.Time `json:"created_at"`
+	ID            string     `json:"id"`
+	CustomerID    string     `json:"customer_id"`
+	ServiceType   string     `json:"service_type"`
+	PiecesCount   int        `json:"pieces_count"`
+	Weight        float64    `json:"weight"`
+	Notes         string     `json:"notes"`
+	Status        string     `json:"status"`
+	EstimatedTime float64    `json:"estimated_time_minutes"`
+	EstimatedCost float64    `json:"estimated_cost"`
+	CreatedAt     time.Time  `json:"created_at"`
+	ReadyAt       *time.Time `json:"ready_at"`
 }

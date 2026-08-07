@@ -47,6 +47,33 @@ func (uc *CreateOrderUseCase) Execute(
 		// Si no hay historial, usar estimado por defecto según tipo
 		return nil, err
 	}
+	if len(historicalData) == 0 {
+		// Si no hay historial, usar estimado por defecto según tipo
+		estimated := time.Duration(defaultEstimate(serviceKey)) * time.Minute
+		estimatedCost := estimateCost(serviceConfig, piecesCount, weight, serviceKey)
+
+		order := &models.Order{
+			ID: uuid.NewString(), CustomerID: customerID, ServiceType: serviceType,
+			PiecesCount: piecesCount, Weight: weight, Notes: notes,
+			Status: models.StatusReceived, EstimatedTime: estimated, EstimatedCost: estimatedCost,
+			CreatedAt: time.Now(), UpdatedAt: time.Now(),
+		}
+
+		if err := uc.orderRepo.Create(order); err != nil {
+			return nil, err
+		}
+
+		_ = uc.predRepo.Save(&models.Prediction{
+			ID:          uuid.NewString(),
+			ServiceType: serviceKey,
+			PiecesCount: piecesCount,
+			Estimated:   estimated,
+			Weight:      weight,
+			CreatedAt:   time.Now(),
+		})
+
+		return order, nil
+	}
 
 	// 2. Calcular predicción
 	var estimatedMinutes float64
@@ -70,14 +97,19 @@ func (uc *CreateOrderUseCase) Execute(
 		return nil, err
 	}
 
-	_ = uc.predRepo.Save(&models.Prediction{
+	prediction := &models.Prediction{
 		ID:          uuid.NewString(),
+		OrderID:     order.ID,
 		ServiceType: serviceKey,
 		PiecesCount: piecesCount,
 		Estimated:   estimated,
 		Weight:      weight,
 		CreatedAt:   time.Now(),
-	})
+	}
+
+	if err := uc.predRepo.Save(prediction); err != nil {
+		return nil, err
+	}
 
 	return order, nil
 }

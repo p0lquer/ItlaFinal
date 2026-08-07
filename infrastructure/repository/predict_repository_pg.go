@@ -23,8 +23,8 @@ func NewPredictionRepository(db *sql.DB) ports.PredictionRepository {
 
 func (r *predictRepositoryPG) Save(prediction *models.Prediction) error {
 	query := `
-        INSERT INTO predictions (id, service_type, pieces_count, estimated, actual, weight, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        INSERT INTO predictions (id, order_id, service_type, pieces_count, estimated, actual, weight, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     `
 	var actualMins *float64
 	if prediction.Actual != nil {
@@ -34,6 +34,7 @@ func (r *predictRepositoryPG) Save(prediction *models.Prediction) error {
 
 	_, err := r.db.Exec(query,
 		prediction.ID,
+		prediction.OrderID,
 		prediction.ServiceType,
 		prediction.PiecesCount,
 		prediction.Estimated.Minutes(),
@@ -101,4 +102,23 @@ func (r *predictRepositoryPG) GetHistoricalData(serviceType string) ([]predictor
 		historical = append(historical, predictor.DataPoint{Weight: weight, ActualMinutes: actMins})
 	}
 	return historical, rows.Err()
+}
+
+func (r *predictRepositoryPG) UpdateActualTime(
+	orderID string,
+	actual time.Duration,
+) error {
+
+	actualMinutes := actual.Minutes()
+
+	_, err := r.db.Exec(`
+        UPDATE predictions
+        SET actual = $1
+        WHERE order_id = $2
+    `,
+		actualMinutes,
+		orderID,
+	)
+
+	return err
 }

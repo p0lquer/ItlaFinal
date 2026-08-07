@@ -10,15 +10,18 @@ import (
 type UpdateOrderStatusUseCase struct {
 	orderRepo ports.OrderRepository
 	notifier  ports.Notifier
+	predRepo  ports.PredictionRepository
 }
 
 func NewUpdateOrderStatusUseCase(
 	orderRepo ports.OrderRepository,
 	notifier ports.Notifier,
+	predRepo ports.PredictionRepository,
 ) *UpdateOrderStatusUseCase {
 	return &UpdateOrderStatusUseCase{
 		orderRepo: orderRepo,
 		notifier:  notifier,
+		predRepo:  predRepo,
 	}
 }
 
@@ -42,6 +45,13 @@ func (uc *UpdateOrderStatusUseCase) Execute(orderID string, newStatus models.Ord
 	// 4. Si la orden está lista, notificar al cliente
 	if newStatus == models.StatusReady {
 		_ = uc.notifier.NotifyOrderReady(order.CustomerID, orderID)
+
+		actual := time.Since(order.CreatedAt)
+
+		if err := uc.predRepo.UpdateActualTime(orderID, actual); err != nil {
+			return err
+		}
+
 		now := time.Now()
 		order.ReadyAt = &now
 	}

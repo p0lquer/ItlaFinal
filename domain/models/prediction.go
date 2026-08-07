@@ -3,6 +3,7 @@ package models
 import "time"
 
 type Prediction struct {
+	OrderID     string
 	ID          string
 	ServiceType string
 	PiecesCount int
