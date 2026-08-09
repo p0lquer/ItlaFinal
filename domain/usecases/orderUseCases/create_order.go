@@ -4,6 +4,7 @@ import (
 	"ITLAFINAL/domain/models"
 	"ITLAFINAL/domain/ports"
 	"ITLAFINAL/pkg/predictor"
+	"log"
 	"math"
 	"strings"
 	"time"
@@ -41,49 +42,15 @@ func (uc *CreateOrderUseCase) Execute(
 		serviceConfig, _ = uc.serviceTypeRepo.FindByName(serviceKey)
 	}
 
-	// 1. Obtener datos históricos para predecir
-	historicalData, err := uc.predRepo.GetHistoricalData(serviceKey)
-	if err != nil {
-		// Si no hay historial, usar estimado por defecto según tipo
-		return nil, err
-	}
-	if len(historicalData) == 0 {
-		// Si no hay historial, usar estimado por defecto según tipo
-		estimated := time.Duration(defaultEstimate(serviceKey)) * time.Minute
-		estimatedCost := estimateCost(serviceConfig, piecesCount, weight, serviceKey)
-
-		order := &models.Order{
-			ID: uuid.NewString(), CustomerID: customerID, ServiceType: serviceType,
-			PiecesCount: piecesCount, Weight: weight, Notes: notes,
-			Status: models.StatusReceived, EstimatedTime: estimated, EstimatedCost: estimatedCost,
-			CreatedAt: time.Now(), UpdatedAt: time.Now(),
-		}
-
-		if err := uc.orderRepo.Create(order); err != nil {
-			return nil, err
-		}
-
-		_ = uc.predRepo.Save(&models.Prediction{
-			OrderID:     order.ID,
-			ID:          uuid.NewString(),
-			ServiceType: serviceKey,
-			PiecesCount: piecesCount,
-			Estimated:   estimated,
-			Weight:      weight,
-			CreatedAt:   time.Now(),
-		})
-
-		return order, nil
-	}
-
-	// 2. Calcular predicción
-	var estimatedMinutes float64
-	if len(historicalData) >= 2 {
-		predict := predictor.LinearRegression(historicalData)
-		estimatedMinutes = predict(weight)
-	} else {
-		estimatedMinutes = defaultEstimate(serviceKey)
-	}
+	// // 1. Obtener datos históricos para predecir
+	// historicalData, err := uc.predRepo.GetHistoricalData(serviceKey)
+	// if err != nil {
+	// 	// Si no hay historial, usar estimado por defecto según tipo
+	// 	return nil, err
+	// }
+	// if len(historicalData) == 0 {
+	// Si no hay historial, usar estimado por defecto según tipo
+	estimatedMinutes := uc.predictMinutes(serviceKey, weight)
 	estimated := time.Duration(estimatedMinutes) * time.Minute
 	estimatedCost := estimateCost(serviceConfig, piecesCount, weight, serviceKey)
 
@@ -97,32 +64,38 @@ func (uc *CreateOrderUseCase) Execute(
 	if err := uc.orderRepo.Create(order); err != nil {
 		return nil, err
 	}
-
-	prediction := &models.Prediction{
-		ID:          uuid.NewString(),
-		OrderID:     order.ID,
-		ServiceType: serviceKey,
-		PiecesCount: piecesCount,
-		Estimated:   estimated,
-		Weight:      weight,
-		CreatedAt:   time.Now(),
-	}
-
-	if err := uc.predRepo.Save(prediction); err != nil {
-		return nil, err
-	}
-
+	// 2. Ya NO se guarda Prediction aquí. La única fila de entrenamiento
+	//    se crea al pasar a "lista" (ver UpdateOrderStatusUseCase).
 	return order, nil
 }
 
+// predictMinutes usa regresión si hay >=2 puntos del MISMO tipo; si no,
+// cae al estimado por defecto. Un error de repo solo se registra.
+func (uc *CreateOrderUseCase) predictMinutes(serviceKey string, weight float64) float64 {
+	historicalData, err := uc.predRepo.GetHistoricalData(serviceKey)
+	if err != nil {
+		log.Printf("create_order: GetHistoricalData(%q) error=%v; usando default", serviceKey, err)
+		return defaultEstimate(serviceKey)
+	}
+	if len(historicalData) >= 2 {
+		return predictor.LinearRegression(historicalData)(weight)
+	}
+	return defaultEstimate(serviceKey)
+}
+
 func defaultEstimate(serviceType string) float64 {
-	defaults := map[string]float64{
-		"lavado_y_secado": 60,
-		"planchado":       30,
-		"lavado_en_seco":  120,
+	type serviceDefaults struct {
+		minutes                   float64
+		base, perWeight, perPiece float64
+	}
+
+	defaults := map[string]serviceDefaults{
+		"lavado_y_secado": {minutes: 60, base: 50, perWeight: 5, perPiece: 0},
+		"planchado":       {minutes: 30, base: 30, perWeight: 0, perPiece: 2},
+		"lavado_en_seco":  {minutes: 120, base: 80, perWeight: 8, perPiece: 0},
 	}
 	if v, ok := defaults[serviceType]; ok {
-		return v
+		return v.minutes
 	}
 	return 60
 }

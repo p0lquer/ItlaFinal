@@ -4,12 +4,15 @@ import (
 	"ITLAFINAL/domain/models"
 	"ITLAFINAL/domain/ports"
 	"ITLAFINAL/domain/usecases/orderUseCases"
+	"context"
 	"log"
 	"time"
 )
 
-// TimerWorker corre en background con goroutines
-// Monitorea órdenes y notifica cuando el tiempo estimado llega
+// TimerWorker escanea órdenes en "en_proceso" y, cuando su tiempo estimado
+// ya transcurrió (medido desde StartedAt), las marca como "lista" llamando al
+// MISMO UpdateOrderStatusUseCase que el endpoint manual. La transición
+// guardada de ese use case impide duplicar registros de entrenamiento.
 type TimerWorker struct {
 	orderRepo         ports.OrderRepository
 	notifier          ports.Notifier
@@ -26,18 +29,23 @@ func NewTimerWorker(
 		orderRepo:         orderRepo,
 		updateOrderStatus: updateOrderStatus,
 		notifier:          notifier,
-		interval:          5 * time.Second,
+		interval:          30 * time.Second, // cada 30s
 	}
 }
 
 // Start lanza el worker en background — se llama con go worker.Start()
-func (w *TimerWorker) Start() {
+func (w *TimerWorker) Start(ctx context.Context) {
 	log.Println("⏱️  TimerWorker iniciado")
 	ticker := time.NewTicker(w.interval)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		w.checkOrders()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			w.checkOrders()
+		}
 	}
 }
 
@@ -49,9 +57,13 @@ func (w *TimerWorker) checkOrders() {
 	}
 
 	for _, order := range orders {
-
+		if order.Status != models.StatusProcessing {
+			continue
+		}
 		actualDuration := time.Since(order.CreatedAt)
-
+		if time.Since(order.StartedBase()) < order.EstimatedTime {
+			continue
+		}
 		if order.Status != models.StatusProcessing {
 			continue
 		}

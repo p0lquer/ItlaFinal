@@ -1,0 +1,1 @@
+ALTER TABLE orders ADD COLUMN started_at TIMESTAMP NOT NULL;

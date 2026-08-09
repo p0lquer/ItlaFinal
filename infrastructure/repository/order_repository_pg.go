@@ -6,6 +6,8 @@ import (
 	"ITLAFINAL/domain/models"
 	"ITLAFINAL/domain/ports"
 	"database/sql"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -214,4 +216,48 @@ func (r *orderRepositoryPG) FindByUserID(userID uuid.UUID) ([]*models.Order, err
 	}
 
 	return orders, rows.Err()
+}
+// transitions describe de qué estados de origen se permite pasar a target.
+// Solo se avanza de forma adyacente/semádyacente para que no existan saltos
+// que dejen la orden sin registro ni dobles marcas de "lista".
+var transitions = map[models.OrderStatus][]models.OrderStatus{
+	models.StatusReceived:   {},
+	models.StatusProcessing: {models.StatusReceived},
+	models.StatusReady:      {models.StatusProcessing, models.StatusReceived},
+	models.StatusDelivered:  {models.StatusProcessing, models.StatusReady},
+}
+// Transition es la transición guardada e idempotente.
+// Devuelve (true, nil) solo cuando cambió el estado de la fila; false si la
+// orden ya estaba en target o no hay transición válida desde su estado actual.
+// También fija started_at al entrar a "en_proceso" y ready_at al llegar a "lista".
+func (r *orderRepositoryPG) Transition(orderID string, target models.OrderStatus) (bool, error) {
+	from, ok := transitions[target]
+	if !ok || len(from) == 0 {
+		return false, nil
+	}
+	placeholders := make([]string, len(from))
+	args := make([]any, 0, len(from)+2)
+	args = append(args, orderID, string(target))
+	for i, s := range from {
+		placeholders[i] = fmt.Sprintf("$%d", i+3)
+		args = append(args, string(s))
+	}
+
+	res, err := r.db.Exec(fmt.Sprintf(`
+		UPDATE orders
+		   SET status = $2,
+		       updated_at = now(),
+		       started_at = CASE WHEN $2 = 'en_proceso' AND started_at IS NULL THEN now() ELSE started_at END,
+		       ready_at   = CASE WHEN $2 = 'lista'      AND ready_at   IS NULL THEN now() ELSE ready_at   END
+		 WHERE id = $1
+		   AND status <> $2
+		   AND status IN (%s)`, strings.Join(placeholders, ", ")), args...)
+	if err != nil {
+		return false, fmt.Errorf("transition order: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return false, fmt.Errorf("transition order rows: %w", err)
+	}
+	return n > 0, nil
 }

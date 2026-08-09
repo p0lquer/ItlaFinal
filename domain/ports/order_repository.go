@@ -14,4 +14,5 @@ type OrderRepository interface {
 	FindByCustomerID(customerID string) ([]*models.Order, error)
 	UpdateStatus(id string, status models.OrderStatus) error
 	Delete(id string) error
+	Transition(orderID string, target models.OrderStatus) (bool, error)
 }

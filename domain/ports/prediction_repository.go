@@ -13,4 +13,5 @@ type PredictionRepository interface {
 	// por tipo de servicio, listos para pkg/predictor.LinearRegression.
 	GetHistoricalData(serviceType string) ([]predictor.DataPoint, error) // retorna tiempos reales en minutos
 	UpdateActualTime(orderID string, actual time.Duration) error
+	UpsertForOrder(orderID string, prediction *models.Prediction) error
 }

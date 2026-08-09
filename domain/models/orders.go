@@ -24,4 +24,16 @@ type Order struct {
 	UpdatedAt     time.Time
 	ReadyAt       *time.Time // nil hasta que esté lista
 	Weight        float64
+	StartedAt     *time.Time // nil hasta que esté en proceso
+}
+
+func (o *Order) ElapsedTime() time.Duration {
+	return time.Since(o.StartedBase())
+}
+
+func (o *Order) StartedBase() time.Time {
+	if o.StartedAt != nil {
+		return *o.StartedAt
+	}
+	return o.CreatedAt
 }

@@ -7,6 +7,7 @@ import (
 	"ITLAFINAL/domain/ports"
 	"ITLAFINAL/pkg/predictor"
 	"database/sql"
+	"fmt"
 	"time"
 )
 
@@ -121,4 +122,32 @@ func (r *predictRepositoryPG) UpdateActualTime(
 	)
 
 	return err
+}
+
+// UpsertForOrder escribe (o actualiza) la única fila de entrenamiento por
+// orden. ON CONFLICT (order_id) impide duplicar datos al re-ejecutar la
+// transición a "lista" (carreras worker/manual incluidas).
+func (r *predictRepositoryPG) UpsertForOrder(orderID string, p *models.Prediction) error {
+	_, err := r.db.Exec(`
+		INSERT INTO predictions (id, order_id, service_type, pieces_count,
+		                         estimated_time, actual_time, weight, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		ON CONFLICT (order_id) DO UPDATE SET
+			estimated_time = EXCLUDED.estimated_time,
+			actual_time    = EXCLUDED.actual_time,
+			pieces_count   = EXCLUDED.pieces_count,
+			weight         = EXCLUDED.weight`,
+		p.ID, orderID, p.ServiceType, p.PiecesCount,
+		p.Estimated.Nanoseconds(), durationToNullableNs(p.Actual), p.Weight, p.CreatedAt,
+	)
+	if err != nil {
+		return fmt.Errorf("upsert prediction for order: %w", err)
+	}
+	return nil
+}
+func durationToNullableNs(d *time.Duration) any {
+	if d == nil {
+		return nil
+	}
+	return d.Nanoseconds()
 }

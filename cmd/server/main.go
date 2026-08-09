@@ -10,6 +10,7 @@ import (
 	"ITLAFINAL/infrastructure/database"
 	"ITLAFINAL/infrastructure/repository"
 	"ITLAFINAL/infrastructure/workers"
+	"context"
 	"log"
 	"os"
 
@@ -70,7 +71,7 @@ func main() {
 
 	// 7. Timer Worker en background
 	worker := workers.NewTimerWorker(orderRepo, updateOrderStatus, hub)
-	go worker.Start()
+	go worker.Start(context.Background())
 
 	//8. Auth
 	userRepo := repository.NewUserRepository(db)
