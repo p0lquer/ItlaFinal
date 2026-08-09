@@ -130,11 +130,11 @@ func (r *predictRepositoryPG) UpdateActualTime(
 func (r *predictRepositoryPG) UpsertForOrder(orderID string, p *models.Prediction) error {
 	_, err := r.db.Exec(`
 		INSERT INTO predictions (id, order_id, service_type, pieces_count,
-		                         estimated_time, actual_time, weight, created_at)
+		                         estimated, actual, weight, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		ON CONFLICT (order_id) DO UPDATE SET
-			estimated_time = EXCLUDED.estimated_time,
-			actual_time    = EXCLUDED.actual_time,
+			estimated = EXCLUDED.estimated,
+			actual    = EXCLUDED.actual,
 			pieces_count   = EXCLUDED.pieces_count,
 			weight         = EXCLUDED.weight`,
 		p.ID, orderID, p.ServiceType, p.PiecesCount,

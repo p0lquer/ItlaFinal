@@ -18,18 +18,25 @@ type TimerWorker struct {
 	notifier          ports.Notifier
 	updateOrderStatus *orderUseCases.UpdateOrderStatusUseCase
 	interval          time.Duration
+	testMode          bool
 }
 
 func NewTimerWorker(
 	orderRepo ports.OrderRepository,
 	updateOrderStatus *orderUseCases.UpdateOrderStatusUseCase,
 	notifier ports.Notifier,
+	testMode bool,
 ) *TimerWorker {
+	interval := 10 * time.Second
+	if testMode {
+		interval = 3 * time.Second // 🧪 modo prueba: avanza status cada 3s
+	}
 	return &TimerWorker{
 		orderRepo:         orderRepo,
 		updateOrderStatus: updateOrderStatus,
 		notifier:          notifier,
-		interval:          30 * time.Second, // cada 30s
+		interval:          interval,
+		testMode:          testMode,
 	}
 }
 
@@ -44,7 +51,40 @@ func (w *TimerWorker) Start(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			w.checkOrders()
+			if w.testMode {
+				w.advanceAllForTest()
+			} else {
+				w.checkOrders()
+			}
+		}
+	}
+}
+
+// nextTestStatus devuelve el siguiente estado para el modo de prueba.
+var nextTestStatus = map[models.OrderStatus]models.OrderStatus{
+	models.StatusReceived:   models.StatusProcessing,
+	models.StatusProcessing: models.StatusReady,
+	models.StatusReady:      models.StatusDelivered,
+}
+
+// advanceAllForTest (modo prueba) avanza TODAS las órdenes al siguiente
+// estado cada tick, para poder ver en consola los logs del notifier y la
+// creación de predicciones sin esperar el tiempo estimado real.
+func (w *TimerWorker) advanceAllForTest() {
+	orders, err := w.orderRepo.FindAll()
+	if err != nil {
+		log.Printf("TimerWorker test: %v", err)
+		return
+	}
+
+	for _, order := range orders {
+		target, ok := nextTestStatus[order.Status]
+		if !ok {
+			continue
+		}
+		log.Printf("🧪 [TEST] Orden %s (%s): %s → %s", order.ID, order.ServiceType, order.Status, target)
+		if err := w.updateOrderStatus.Execute(order.ID, target); err != nil {
+			log.Printf("TimerWorker test: error orden %s: %v", order.ID, err)
 		}
 	}
 }

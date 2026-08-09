@@ -59,7 +59,7 @@ func main() {
 	createServiceType := orderUseCases.NewCreateServiceTypeUseCase(stRepo)
 
 	createOrder := orderUseCases.NewCreateOrderUseCase(orderRepo, predRepo, stRepo)
-	updateOrderStatus := orderUseCases.NewUpdateOrderStatusUseCase(orderRepo, predRepo)
+	updateOrderStatus := orderUseCases.NewUpdateOrderStatusUseCase(orderRepo, predRepo, &LogNotifier{})
 	// 6. Handlers
 	customerHandler := handlers.NewCustomerHandler(createCustomer, getAllCustomers, customerUseCases.NewDeleteCustomerUseCase(customerRepo))
 	getAllOrders := orderUseCases.NewGetAllOrdersUseCase(orderRepo)
@@ -70,7 +70,7 @@ func main() {
 	orderHandler := handlers.NewOrderHandler(createOrder, updateOrderStatus, getAllOrders, getMyOrders, deleteOrder)
 
 	// 7. Timer Worker en background
-	worker := workers.NewTimerWorker(orderRepo, updateOrderStatus, hub)
+	worker := workers.NewTimerWorker(orderRepo, updateOrderStatus, hub, os.Getenv("TEST_MODE") == "true")
 	go worker.Start(context.Background())
 
 	//8. Auth
