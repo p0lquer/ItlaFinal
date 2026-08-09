@@ -64,6 +64,7 @@ func (uc *CreateOrderUseCase) Execute(
 		}
 
 		_ = uc.predRepo.Save(&models.Prediction{
+			OrderID:     order.ID,
 			ID:          uuid.NewString(),
 			ServiceType: serviceKey,
 			PiecesCount: piecesCount,

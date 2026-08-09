@@ -47,7 +47,7 @@ func (r *predictRepositoryPG) Save(prediction *models.Prediction) error {
 
 func (r *predictRepositoryPG) FindByServiceType(serviceType string) ([]*models.Prediction, error) {
 	query := `
-		SELECT id, service_type, pieces_count, estimated_time, actual_time, created_at 
+		SELECT id, service_type, pieces_count, estimated_time, actual, created_at 
 		FROM predictions 
 		WHERE service_type = $1
 	`
@@ -83,9 +83,9 @@ func (r *predictRepositoryPG) GetHistoricalData(serviceType string) ([]predictor
 	// registrado — órdenes viejas, previas a esta migración, tendrán weight NULL
 	// y no sirven como punto de entrenamiento para la regresión por peso.
 	query := `
-		SELECT weight, actual_time
+		SELECT weight, actual
 		FROM predictions
-		WHERE service_type = $1 AND actual_time IS NOT NULL AND weight IS NOT NULL
+		WHERE service_type = $1 AND actual IS NOT NULL AND weight IS NOT NULL
 	`
 	rows, err := r.db.Query(query, serviceType)
 	if err != nil {
