@@ -13,6 +13,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"strings"
 
 	_ "ITLAFINAL/docs"
 
@@ -77,10 +78,24 @@ func main() {
 
 	//8. Auth
 	userRepo := repository.NewUserRepository(db)
+	adminEmail, adminPassword := strings.TrimSpace(os.Getenv("ADMIN_EMAIL")), os.Getenv("ADMIN_PASSWORD")
+	if (adminEmail == "") != (adminPassword == "") {
+		log.Fatal("ADMIN_EMAIL y ADMIN_PASSWORD deben configurarse juntos")
+	}
+	if adminEmail != "" {
+		adminName := strings.TrimSpace(os.Getenv("ADMIN_NAME"))
+		if adminName == "" {
+			adminName = "Administrador"
+		}
+		if err := userUseCases.BootstrapAdmin(userRepo, adminName, adminEmail, adminPassword); err != nil {
+			log.Fatalf("no se pudo aprovisionar ADMIN_EMAIL: %v", err)
+		}
+	}
 	registerUC := userUseCases.NewRegisterUserUseCase(userRepo, customerRepo)
 	loginUC := userUseCases.NewLoginUserUseCase(userRepo)
 	deleteUserUC := userUseCases.NewDeleteUserUseCase(userRepo, customerRepo)
 	authHandler := handlers.NewAuthHandler(registerUC, loginUC, deleteUserUC)
+	adminHandler := handlers.NewAdminHandler(userUseCases.NewAdminUsersUseCase(userRepo))
 
 	// 9. Router
 	r := gin.Default()
@@ -101,7 +116,7 @@ func main() {
 	}
 
 	//protected
-	api := r.Group("/api", middleware.AuthRequired())
+	api := r.Group("/api", middleware.AuthRequired(), middleware.ActiveUserRequired(userRepo))
 	{
 		api.GET("/auth/me", authHandler.Me)
 		api.GET("/service-types", serviceTypeHandler.GetAll)
@@ -116,10 +131,17 @@ func main() {
 		operator := api.Group("/", middleware.OperatorOnly())
 		{
 			operator.GET("/orders", orderHandler.GetAll)
-			operator.DELETE("/users/:id", authHandler.DeleteUser)
 			operator.PATCH("/orders/:id/status", orderHandler.UpdateStatus)
 			operator.DELETE("/orders/:id", orderHandler.Delete)
 			operator.POST("/service-types", serviceTypeHandler.Create)
+		}
+
+		admin := api.Group("/admin", middleware.AdminOnly())
+		{
+			admin.GET("/users", adminHandler.ListUsers)
+			admin.PATCH("/users/:id/block", adminHandler.BlockUser)
+			admin.PATCH("/users/:id/unblock", adminHandler.UnblockUser)
+			admin.DELETE("/users/:id", adminHandler.DeleteUser)
 		}
 		// Clientes — solo operadores pueden crear/modificar/eliminar
 		operator = api.Group("/", middleware.OperatorOnly())

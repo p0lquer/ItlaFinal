@@ -55,6 +55,7 @@ func (uc *RegisterUserUseCase) Execute(
 		Email:     email,
 		Password:  string(hashedPassword),
 		Role:      role,
+		IsActive:  true,
 		CreatedAt: time.Now(),
 	}
 

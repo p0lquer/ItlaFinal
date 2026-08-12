@@ -82,4 +82,4 @@ func Parse(raw string) (*Claims, error) {
 	return claims, nil
 }
 
-func validRole(role string) bool { return role == "customer" || role == "operator" }
+func validRole(role string) bool { return role == "customer" || role == "operator" || role == "admin" }

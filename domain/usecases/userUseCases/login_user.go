@@ -36,6 +36,10 @@ func (uc *LoginUserUseCase) Execute(email, password string) (*LoginResult, error
 		return nil, errors.New("credenciales inválidas")
 	}
 
+	if !user.IsActive {
+		return nil, errors.New("cuenta bloqueada")
+	}
+
 	tokenString, err := authjwt.NewToken(user.ID, user.Email, string(user.Role), time.Now())
 	if err != nil {
 		return nil, errors.New("error al generar el token")
