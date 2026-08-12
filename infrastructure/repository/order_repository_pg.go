@@ -4,7 +4,6 @@ import (
 	"ITLAFINAL/domain/models"
 	"ITLAFINAL/domain/ports"
 	"database/sql"
-	"fmt"
 	"strings"
 	"time"
 
@@ -80,12 +79,137 @@ func (r *orderRepositoryPG) FindAll() ([]*models.Order, error) {
 	return findOrders(rows)
 }
 
+// List retrieves a stable, paginated operator view. Search covers the order
+// ID, customer name/email and service type, while every dynamic value remains
+// a bound SQL parameter.
+func (r *orderRepositoryPG) List(filter models.OrderFilter) (*models.OrderPage, error) {
+	filter = normalizeOrderFilter(filter)
+	where, args := buildOrderListWhere(filter)
+	from := ` FROM orders o LEFT JOIN customers c ON c.id = o.customer_id `
+
+	var total int
+	if err := r.db.QueryRow(`SELECT COUNT(*)`+from+where, args...).Scan(&total); err != nil {
+		return nil, err
+	}
+
+	limitPosition := len(args) + 1
+	offsetPosition := len(args) + 2
+	query := `SELECT ` + prefixedOrderColumns("o") + from + where +
+		` ORDER BY o.created_at DESC, o.id DESC LIMIT $` + itoa(limitPosition) + ` OFFSET $` + itoa(offsetPosition)
+	rows, err := r.db.Query(query, append(args, filter.PageSize, (filter.Page-1)*filter.PageSize)...)
+	if err != nil {
+		return nil, err
+	}
+	orders, err := findOrders(rows)
+	if err != nil {
+		return nil, err
+	}
+	return &models.OrderPage{Orders: orders, Total: total, Page: filter.Page, PageSize: filter.PageSize}, nil
+}
+
+func normalizeOrderFilter(filter models.OrderFilter) models.OrderFilter {
+	if filter.Page < 1 {
+		filter.Page = 1
+	}
+	if filter.PageSize < 1 {
+		filter.PageSize = 20
+	}
+	if filter.PageSize > 100 {
+		filter.PageSize = 100
+	}
+	filter.Search = strings.TrimSpace(filter.Search)
+	filter.CustomerID = strings.TrimSpace(filter.CustomerID)
+	filter.ServiceType = strings.TrimSpace(filter.ServiceType)
+	return filter
+}
+
+func buildOrderListWhere(filter models.OrderFilter) (string, []any) {
+	clauses := make([]string, 0, 6)
+	args := make([]any, 0, 6)
+	add := func(clause string, value any) {
+		args = append(args, value)
+		clauses = append(clauses, clause+` $`+itoa(len(args)))
+	}
+	if filter.Search != "" {
+		args = append(args, "%"+strings.ToLower(filter.Search)+"%")
+		position := itoa(len(args))
+		clauses = append(clauses, `(LOWER(o.id) LIKE $`+position+` OR LOWER(o.service_type) LIKE $`+position+` OR LOWER(COALESCE(c.name, '')) LIKE $`+position+` OR LOWER(COALESCE(c.email, '')) LIKE $`+position+`)`)
+	}
+	if filter.CustomerID != "" {
+		add(`o.customer_id =`, filter.CustomerID)
+	}
+	if filter.Status != "" {
+		add(`o.status =`, string(filter.Status))
+	}
+	if filter.ServiceType != "" {
+		add(`LOWER(o.service_type) = LOWER(`, filter.ServiceType)
+		clauses[len(clauses)-1] += `)`
+	}
+	if filter.From != nil {
+		add(`o.created_at >=`, *filter.From)
+	}
+	if filter.To != nil {
+		add(`o.created_at <=`, *filter.To)
+	}
+	if len(clauses) == 0 {
+		return "", args
+	}
+	return ` WHERE ` + strings.Join(clauses, ` AND `), args
+}
+
+func prefixedOrderColumns(prefix string) string {
+	return prefix + `.` + strings.ReplaceAll(orderColumns, `, `, `, `+prefix+`.`)
+}
+
+// strconv.Itoa is avoided here because it is only used to build placeholder
+// positions that are calculated locally, never from client input.
+func itoa(value int) string {
+	if value == 0 {
+		return "0"
+	}
+	result := make([]byte, 0, 3)
+	for value > 0 {
+		result = append([]byte{byte('0' + value%10)}, result...)
+		value /= 10
+	}
+	return string(result)
+}
+
 func (r *orderRepositoryPG) FindByCustomerID(customerID string) ([]*models.Order, error) {
 	rows, err := r.db.Query(`SELECT `+orderColumns+` FROM orders WHERE customer_id=$1 ORDER BY created_at DESC`, customerID)
 	if err != nil {
 		return nil, err
 	}
 	return findOrders(rows)
+}
+
+func (r *orderRepositoryPG) FindStatusHistory(orderID string) ([]*models.OrderStatusChange, error) {
+	rows, err := r.db.Query(`SELECT order_id, from_status, to_status, changed_by, changed_by_role, description, changed_at
+		FROM order_status_history WHERE order_id=$1 ORDER BY changed_at ASC`, orderID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	history := make([]*models.OrderStatusChange, 0)
+	for rows.Next() {
+		change := &models.OrderStatusChange{}
+		var changedBy, changedByRole, description sql.NullString
+		if err := rows.Scan(&change.OrderID, &change.FromStatus, &change.ToStatus, &changedBy, &changedByRole, &description, &change.ChangedAt); err != nil {
+			return nil, err
+		}
+		if changedBy.Valid {
+			change.ChangedBy = changedBy.String
+		}
+		if changedByRole.Valid {
+			change.ChangedByRole = changedByRole.String
+		}
+		if description.Valid {
+			change.Description = description.String
+		}
+		history = append(history, change)
+	}
+	return history, rows.Err()
 }
 
 // FindByUserID uses the explicit customer/user relationship; customer IDs are
@@ -111,30 +235,50 @@ func (r *orderRepositoryPG) Delete(id string) error {
 	return err
 }
 
-var transitions = map[models.OrderStatus][]models.OrderStatus{
-	models.StatusProcessing: {models.StatusReceived},
-	models.StatusReady:      {models.StatusProcessing},
-	models.StatusDelivered:  {models.StatusReady},
+var transitions = map[models.OrderStatus]models.OrderStatus{
+	models.StatusProcessing: models.StatusReceived,
+	models.StatusReady:      models.StatusProcessing,
+	models.StatusDelivered:  models.StatusReady,
 }
 
-func (r *orderRepositoryPG) Transition(orderID string, target models.OrderStatus) (bool, error) {
+func (r *orderRepositoryPG) Transition(orderID string, target models.OrderStatus, change models.OrderStatusChange) (bool, error) {
 	from, ok := transitions[target]
 	if !ok {
 		return false, nil
 	}
-	args := []any{orderID, string(target)}
-	placeholders := make([]string, len(from))
-	for i, status := range from {
-		placeholders[i] = fmt.Sprintf("$%d", i+3)
-		args = append(args, string(status))
+	if change.ChangedBy == "" {
+		change.ChangedBy = "sistema"
 	}
-	result, err := r.db.Exec(fmt.Sprintf(`UPDATE orders SET status=$2::varchar, updated_at=now(),
-		started_at=CASE WHEN $2::varchar='en_proceso' AND started_at IS NULL THEN now() ELSE started_at END,
-		ready_at=CASE WHEN $2::varchar='lista' AND ready_at IS NULL THEN now() ELSE ready_at END
-		WHERE id=$1 AND status IN (%s)`, strings.Join(placeholders, ",")), args...)
+	if change.ChangedByRole == "" {
+		change.ChangedByRole = "system"
+	}
+
+	tx, err := r.db.Begin()
 	if err != nil {
-		return false, fmt.Errorf("transition order: %w", err)
+		return false, err
+	}
+	defer tx.Rollback()
+
+	result, err := tx.Exec(`UPDATE orders SET status=$2, updated_at=now(),
+		started_at=CASE WHEN $2='en_proceso' AND started_at IS NULL THEN now() ELSE started_at END,
+		ready_at=CASE WHEN $2='lista' AND ready_at IS NULL THEN now() ELSE ready_at END
+		WHERE id=$1 AND status=$3`, orderID, string(target), string(from))
+	if err != nil {
+		return false, err
 	}
 	n, err := result.RowsAffected()
-	return n > 0, err
+	if err != nil || n == 0 {
+		return n > 0, err
+	}
+
+	_, err = tx.Exec(`INSERT INTO order_status_history
+		(order_id, from_status, to_status, changed_by, changed_by_role, description)
+		VALUES ($1, $2, $3, $4, $5, $6)`, orderID, string(from), string(target), change.ChangedBy, change.ChangedByRole, change.Description)
+	if err != nil {
+		return false, err
+	}
+	if err := tx.Commit(); err != nil {
+		return false, err
+	}
+	return true, nil
 }

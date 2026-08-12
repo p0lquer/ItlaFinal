@@ -29,7 +29,10 @@ func NewUpdateOrderStatusUseCase(orderRepo ports.OrderRepository, predRepo ports
 	return uc
 }
 
-func (uc *UpdateOrderStatusUseCase) Execute(orderID string, target models.OrderStatus) error {
+// Execute advances an order one step. The optional change identifies the
+// operator that initiated the transition; omitted metadata is recorded as an
+// automatic system action (for example, the timer worker).
+func (uc *UpdateOrderStatusUseCase) Execute(orderID string, target models.OrderStatus, changes ...models.OrderStatusChange) error {
 	order, err := uc.orderRepo.FindByID(orderID)
 	if err != nil {
 		return err
@@ -41,7 +44,14 @@ func (uc *UpdateOrderStatusUseCase) Execute(orderID string, target models.OrderS
 		return errors.New("transición de estado inválida")
 	}
 
-	updated, err := uc.orderRepo.Transition(orderID, target)
+	change := models.OrderStatusChange{}
+	if len(changes) > 0 {
+		change = changes[0]
+	}
+	change.OrderID = orderID
+	change.FromStatus = order.Status
+	change.ToStatus = target
+	updated, err := uc.orderRepo.Transition(orderID, target, change)
 	if err != nil {
 		return err
 	}

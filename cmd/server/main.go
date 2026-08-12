@@ -64,10 +64,12 @@ func main() {
 	customerHandler := handlers.NewCustomerHandler(createCustomer, getAllCustomers, customerUseCases.NewDeleteCustomerUseCase(customerRepo))
 	getAllOrders := orderUseCases.NewGetAllOrdersUseCase(orderRepo)
 	getMyOrders := orderUseCases.NewGetMyOrdersUseCase(orderRepo)
+	getOrder := orderUseCases.NewGetOrderUseCase(orderRepo)
+	getOrderHistory := orderUseCases.NewGetOrderHistoryUseCase(orderRepo)
 	deleteOrder := orderUseCases.NewDeleteOrderUseCase(orderRepo, predRepo)
 	serviceTypeHandler := handlers.NewServiceTypeHandler(getAllServiceTypes, createServiceType)
 
-	orderHandler := handlers.NewOrderHandler(createOrder, updateOrderStatus, getAllOrders, getMyOrders, deleteOrder)
+	orderHandler := handlers.NewOrderHandler(createOrder, updateOrderStatus, getAllOrders, getMyOrders, deleteOrder, getOrder, getOrderHistory)
 
 	// 7. Timer Worker en background
 	worker := workers.NewTimerWorker(orderRepo, updateOrderStatus, hub)
@@ -89,6 +91,7 @@ func main() {
 		ExposeHeaders:    []string{"Content-Length", "Authorization"},
 		AllowCredentials: false,
 	}))
+	r.GET("/health", handlers.HealthHandler(db))
 
 	// Públicas — sin middleware
 	auth := r.Group("/api/auth")
@@ -103,6 +106,8 @@ func main() {
 		api.GET("/auth/me", authHandler.Me)
 		api.GET("/service-types", serviceTypeHandler.GetAll)
 		api.GET("/orders/mine", orderHandler.GetMy)
+		api.GET("/orders/:id", orderHandler.GetDetail)
+		api.GET("/orders/:id/history", orderHandler.GetHistory)
 		api.POST("/orders", orderHandler.Create)
 
 		// Órdenes — cualquier usuario autenticado puede ver

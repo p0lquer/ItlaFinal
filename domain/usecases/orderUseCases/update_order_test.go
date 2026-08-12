@@ -24,12 +24,18 @@ func (r *statusOrderRepo) FindByID(string) (*models.Order, error) {
 	}
 	return r.order, nil
 }
-func (r *statusOrderRepo) FindAll() ([]*models.Order, error)                { return nil, nil }
+func (r *statusOrderRepo) FindAll() ([]*models.Order, error) { return nil, nil }
+func (r *statusOrderRepo) List(models.OrderFilter) (*models.OrderPage, error) {
+	return nil, nil
+}
 func (r *statusOrderRepo) FindByUserID(uuid.UUID) ([]*models.Order, error)  { return nil, nil }
 func (r *statusOrderRepo) FindByCustomerID(string) ([]*models.Order, error) { return nil, nil }
-func (r *statusOrderRepo) UpdateStatus(string, models.OrderStatus) error    { return nil }
-func (r *statusOrderRepo) Delete(string) error                              { return nil }
-func (r *statusOrderRepo) Transition(_ string, target models.OrderStatus) (bool, error) {
+func (r *statusOrderRepo) FindStatusHistory(string) ([]*models.OrderStatusChange, error) {
+	return nil, nil
+}
+func (r *statusOrderRepo) UpdateStatus(string, models.OrderStatus) error { return nil }
+func (r *statusOrderRepo) Delete(string) error                           { return nil }
+func (r *statusOrderRepo) Transition(_ string, target models.OrderStatus, _ models.OrderStatusChange) (bool, error) {
 	r.transitionTo = target
 	return r.transition, nil
 }

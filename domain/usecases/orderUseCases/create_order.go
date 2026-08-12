@@ -4,6 +4,7 @@ import (
 	"ITLAFINAL/domain/models"
 	"ITLAFINAL/domain/ports"
 	"ITLAFINAL/pkg/predictor"
+	"errors"
 	"log"
 	"math"
 	"strings"
@@ -36,10 +37,28 @@ func (uc *CreateOrderUseCase) Execute(
 	notes string,
 	weight float64,
 ) (*models.Order, error) {
+	serviceType = strings.TrimSpace(serviceType)
+	notes = strings.TrimSpace(notes)
+	if serviceType == "" {
+		return nil, errors.New("tipo de servicio requerido")
+	}
+	if piecesCount < 1 || piecesCount > 200 {
+		return nil, errors.New("la cantidad de piezas debe estar entre 1 y 200")
+	}
+	if weight <= 0 || weight > 100 || math.IsNaN(weight) || math.IsInf(weight, 0) {
+		return nil, errors.New("el peso debe estar entre 0 y 100 kg")
+	}
+	if len(notes) > 1000 {
+		return nil, errors.New("las notas no pueden superar 1000 caracteres")
+	}
+
 	serviceKey := normalizeServiceType(serviceType)
-	serviceConfig, _ := uc.serviceTypeRepo.FindByName(serviceType)
+	serviceConfig, err := uc.serviceTypeRepo.FindByName(serviceType)
+	if err != nil {
+		return nil, err
+	}
 	if serviceConfig == nil {
-		serviceConfig, _ = uc.serviceTypeRepo.FindByName(serviceKey)
+		return nil, errors.New("tipo de servicio no disponible")
 	}
 
 	// // 1. Obtener datos históricos para predecir
@@ -51,6 +70,9 @@ func (uc *CreateOrderUseCase) Execute(
 	// if len(historicalData) == 0 {
 	// Si no hay historial, usar estimado por defecto según tipo
 	estimatedMinutes := uc.predictMinutes(serviceKey, weight)
+	if math.IsNaN(estimatedMinutes) || math.IsInf(estimatedMinutes, 0) || estimatedMinutes < 15 || estimatedMinutes > 480 {
+		estimatedMinutes = defaultEstimate(serviceKey)
+	}
 	estimated := time.Duration(estimatedMinutes) * time.Minute
 	estimatedCost := estimateCost(serviceConfig, piecesCount, weight, serviceKey)
 

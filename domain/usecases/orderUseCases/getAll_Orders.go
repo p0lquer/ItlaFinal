@@ -16,3 +16,7 @@ func NewGetAllOrdersUseCase(orderRepo ports.OrderRepository) *GetAllOrdersUseCas
 func (uc *GetAllOrdersUseCase) Execute() ([]*models.Order, error) {
 	return uc.orderRepo.FindAll()
 }
+
+func (uc *GetAllOrdersUseCase) ExecutePage(filter models.OrderFilter) (*models.OrderPage, error) {
+	return uc.orderRepo.List(filter)
+}
