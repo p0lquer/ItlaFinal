@@ -14,6 +14,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	_ "ITLAFINAL/docs"
 
@@ -113,8 +114,8 @@ func main() {
 	// Públicas — sin middleware
 	auth := r.Group("/api/auth")
 	{
-		auth.POST("/register", authHandler.Register)
-		auth.POST("/login", authHandler.Login)
+		auth.POST("/register", middleware.RateLimit(8, time.Minute), authHandler.Register)
+		auth.POST("/login", middleware.RateLimit(8, time.Minute), authHandler.Login)
 	}
 
 	//protected
@@ -127,6 +128,7 @@ func main() {
 		api.GET("/orders/:id/history", orderHandler.GetHistory)
 		api.GET("/orders/:id/payment-summary", orderHandler.PaymentSummary)
 		api.GET("/orders/:id/invoice", orderHandler.Invoice)
+		api.GET("/payments/mine", orderHandler.PaymentHistory)
 		api.POST("/orders/:id/payments", orderHandler.Pay)
 		api.POST("/orders", orderHandler.Create)
 

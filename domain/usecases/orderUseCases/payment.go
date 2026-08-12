@@ -28,7 +28,16 @@ func (uc *PaymentUseCase) Summary(orderID string) (*models.PaymentSummary, error
 	if err != nil {
 		return nil, err
 	}
-	return &models.PaymentSummary{Order: o, Payment: p, CanPay: p == nil && o.Status != models.StatusReceived}, nil
+	// Payment is only accepted once production has explicitly marked the order
+	// ready for pickup. UI rules are helpful, but this domain rule is final.
+	return &models.PaymentSummary{Order: o, Payment: p, CanPay: p == nil && o.Status == models.StatusReady}, nil
+}
+
+func (uc *PaymentUseCase) History(customerID string) ([]*models.Payment, error) {
+	if strings.TrimSpace(customerID) == "" {
+		return []*models.Payment{}, nil
+	}
+	return uc.payments.FindByCustomerID(customerID)
 }
 
 func (uc *PaymentUseCase) Pay(orderID, method string) (*models.Payment, error) {

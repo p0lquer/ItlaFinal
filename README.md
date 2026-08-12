@@ -36,6 +36,22 @@ Las Ã³rdenes siguen el flujo `recibida -> en_proceso -> lista -> entregada`; n
 
 Define `ADMIN_EMAIL` y `ADMIN_PASSWORD` (y opcionalmente `ADMIN_NAME`) antes de iniciar la API para aprovisionar la Ãºnica cuenta administrativa inicial. El registro pÃºblico no puede crear administradores. Desde `/api/admin/users`, un administrador puede buscar, paginar, bloquear, desbloquear o eliminar cuentas sin Ã³rdenes; el bloqueo invalida las sesiones ya emitidas.
 
+## Cobros y factura de demostraciÃ³n
+
+El cobro es una **simulaciÃ³n acadÃ©mica**: no contacta pasarelas, no procesa tarjetas y no almacena informaciÃ³n financiera. Solo registra el mÃ©todo elegido y crea un comprobante interno para la demostraciÃ³n. Una orden puede pagarse una sola vez y exclusivamente cuando su estado es `lista`.
+
+La factura PDF es un comprobante visual generado por el navegador; no es una factura fiscal y no incluye NCF, RNC ni validez tributaria. Para operar comercialmente se requerirÃ­an una pasarela real con webhooks y un proveedor de facturaciÃ³n fiscal. Los recibos del cliente estÃ¡n disponibles en `GET /api/payments/mine`, y una factura pagada en `GET /api/orders/:id/invoice`.
+
+## Despliegue reproducible
+
+Configura secretos reales en un archivo `.env` no versionado y ejecuta:
+
+```powershell
+docker compose -f docker-compose.production.yml up --build -d
+```
+
+El servicio `migrate` aplica los scripts SQL antes de iniciar la API. En producciÃ³n utiliza HTTPS y un proxy inverso; no expongas PostgreSQL ni uses valores de ejemplo.
+
 ## Variables requeridas
 
 `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`, `OPERATOR_KEY`, `PORT` y `WS_ALLOWED_ORIGINS`.

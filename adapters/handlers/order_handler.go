@@ -81,6 +81,20 @@ func (h *OrderHandler) Invoice(c *gin.Context) {
 	c.JSON(http.StatusOK, paymentPayload(summary))
 }
 
+// PaymentHistory returns only the authenticated customer's completed receipts.
+func (h *OrderHandler) PaymentHistory(c *gin.Context) {
+	if c.GetString("role") != "customer" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "el historial de pagos es exclusivo para clientes"})
+		return
+	}
+	payments, err := h.payment.History(c.GetString("user_id"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "no se pudo consultar el historial de pagos"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": payments})
+}
+
 type payOrderRequest struct {
 	Method string `json:"method" binding:"required"`
 }
