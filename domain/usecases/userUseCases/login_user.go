@@ -3,6 +3,7 @@ package userUseCases
 import (
 	"ITLAFINAL/domain/ports"
 	"ITLAFINAL/pkg/authjwt"
+	"ITLAFINAL/pkg/inputvalidation"
 	"errors"
 	"time"
 
@@ -25,8 +26,15 @@ type LoginResult struct {
 }
 
 func (uc *LoginUserUseCase) Execute(email, password string) (*LoginResult, error) {
+	normalizedEmail, err := inputvalidation.Email(email)
+	if err != nil {
+		return nil, errors.New("credenciales inválidas")
+	}
+	if err := inputvalidation.LoginPassword(password); err != nil {
+		return nil, err
+	}
 	// Buscar el usuario
-	user, err := uc.userRepo.FindByEmail(email)
+	user, err := uc.userRepo.FindByEmail(normalizedEmail)
 	if err != nil || user == nil {
 		return nil, errors.New("credenciales inválidas")
 	}

@@ -3,6 +3,7 @@ package orderUseCases
 import (
 	"ITLAFINAL/domain/models"
 	"ITLAFINAL/domain/ports"
+	"ITLAFINAL/pkg/inputvalidation"
 	"ITLAFINAL/pkg/predictor"
 	"errors"
 	"log"
@@ -37,10 +38,14 @@ func (uc *CreateOrderUseCase) Execute(
 	notes string,
 	weight float64,
 ) (*models.Order, error) {
-	serviceType = strings.TrimSpace(serviceType)
-	notes = strings.TrimSpace(notes)
-	if serviceType == "" {
-		return nil, errors.New("tipo de servicio requerido")
+	var err error
+	serviceType, err = inputvalidation.Service(serviceType)
+	if err != nil {
+		return nil, err
+	}
+	notes, err = inputvalidation.Notes(notes, 500)
+	if err != nil {
+		return nil, err
 	}
 	if piecesCount < 1 || piecesCount > 200 {
 		return nil, errors.New("la cantidad de piezas debe estar entre 1 y 200")
@@ -48,10 +53,6 @@ func (uc *CreateOrderUseCase) Execute(
 	if weight <= 0 || weight > 100 || math.IsNaN(weight) || math.IsInf(weight, 0) {
 		return nil, errors.New("el peso debe estar entre 0 y 100 kg")
 	}
-	if len(notes) > 1000 {
-		return nil, errors.New("las notas no pueden superar 1000 caracteres")
-	}
-
 	serviceKey := normalizeServiceType(serviceType)
 	serviceConfig, err := uc.serviceTypeRepo.FindByName(serviceType)
 	if err != nil {

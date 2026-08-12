@@ -3,6 +3,7 @@ package userUseCases
 import (
 	"ITLAFINAL/domain/models"
 	"ITLAFINAL/domain/ports"
+	"ITLAFINAL/pkg/inputvalidation"
 	"errors"
 	"os"
 	"strings"
@@ -30,7 +31,29 @@ func NewRegisterUserUseCase(
 func (uc *RegisterUserUseCase) Execute(
 	name, email, password, phone, operatorKey string,
 ) (*models.User, error) {
-	email = strings.ToLower(email)
+	var err error
+	name, err = inputvalidation.Name(name)
+	if err != nil {
+		return nil, err
+	}
+	email, err = inputvalidation.Email(email)
+	if err != nil {
+		return nil, err
+	}
+	if err := inputvalidation.Password(password); err != nil {
+		return nil, err
+	}
+	phone = strings.TrimSpace(phone)
+	if phone != "" {
+		phone, err = inputvalidation.Phone(phone)
+		if err != nil {
+			return nil, err
+		}
+	}
+	operatorKey = strings.TrimSpace(operatorKey)
+	if len(operatorKey) > 128 {
+		return nil, errors.New("clave de operador inválida")
+	}
 
 	existing, err := uc.userRepo.FindByEmail(email)
 	if err != nil {

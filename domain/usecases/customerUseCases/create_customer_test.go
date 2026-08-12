@@ -14,7 +14,7 @@ func (s *customerRepoSpy) Delete(string) error                       { return ni
 
 func TestCreateCustomerGeneratesIDServerSide(t *testing.T) {
 	spy := &customerRepoSpy{}
-	customer, err := NewCreateCustomerUseCase(spy).Execute("id-provided-by-client", "Ana", "123", "ana@example.com")
+	customer, err := NewCreateCustomerUseCase(spy).Execute("id-provided-by-client", "Ana", "809-555-0000", "ana@example.com")
 	if err != nil {
 		t.Fatal(err)
 	}
