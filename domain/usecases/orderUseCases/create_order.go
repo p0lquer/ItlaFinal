@@ -137,6 +137,16 @@ func normalizeServiceType(serviceType string) string {
 }
 
 func estimateCost(serviceType *models.ServiceType, piecesCount int, weight float64, serviceKey string) float64 {
+	// Catalogued services are charged by the dominant unit: a 3 lb / 1 piece
+	// order consumes three units, while 1 lb / 4 pieces consumes four. This
+	// keeps the published price exact for 1 lb + 1 piece and avoids fractions.
+	if serviceType != nil && serviceType.BasePrice > 0 && serviceType.PricePerWeight == 0 && serviceType.PricePerPiece == 0 {
+		units := math.Max(math.Ceil(weight), float64(piecesCount))
+		if units < 1 {
+			units = 1
+		}
+		return roundMoney(serviceType.BasePrice * units)
+	}
 	if serviceType != nil {
 		cost := serviceType.BasePrice
 		cost += serviceType.PricePerWeight * weight

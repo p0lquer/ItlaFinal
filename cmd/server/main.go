@@ -50,6 +50,7 @@ func main() {
 	// 4. Repositories
 	customerRepo := repository.NewCustomerRepository(db)
 	orderRepo := repository.NewOrderRepository(db)
+	paymentRepo := repository.NewPaymentRepository(db)
 	predRepo := repository.NewPredictionRepository(db)
 	stRepo := repository.NewServiceTypeRepository(db)
 
@@ -67,10 +68,11 @@ func main() {
 	getMyOrders := orderUseCases.NewGetMyOrdersUseCase(orderRepo)
 	getOrder := orderUseCases.NewGetOrderUseCase(orderRepo)
 	getOrderHistory := orderUseCases.NewGetOrderHistoryUseCase(orderRepo)
+	paymentUC := orderUseCases.NewPaymentUseCase(orderRepo, paymentRepo)
 	deleteOrder := orderUseCases.NewDeleteOrderUseCase(orderRepo, predRepo)
 	serviceTypeHandler := handlers.NewServiceTypeHandler(getAllServiceTypes, createServiceType)
 
-	orderHandler := handlers.NewOrderHandler(createOrder, updateOrderStatus, getAllOrders, getMyOrders, deleteOrder, getOrder, getOrderHistory)
+	orderHandler := handlers.NewOrderHandler(createOrder, updateOrderStatus, getAllOrders, getMyOrders, deleteOrder, getOrder, getOrderHistory, paymentUC)
 
 	// 7. Timer Worker en background
 	worker := workers.NewTimerWorker(orderRepo, updateOrderStatus, hub)
@@ -123,6 +125,9 @@ func main() {
 		api.GET("/orders/mine", orderHandler.GetMy)
 		api.GET("/orders/:id", orderHandler.GetDetail)
 		api.GET("/orders/:id/history", orderHandler.GetHistory)
+		api.GET("/orders/:id/payment-summary", orderHandler.PaymentSummary)
+		api.GET("/orders/:id/invoice", orderHandler.Invoice)
+		api.POST("/orders/:id/payments", orderHandler.Pay)
 		api.POST("/orders", orderHandler.Create)
 
 		// Órdenes — cualquier usuario autenticado puede ver

@@ -22,6 +22,7 @@ type OrderHandler struct {
 	deleteOrder       *orderUseCases.DeleteOrderUseCase
 	getOrder          *orderUseCases.GetOrderUseCase
 	getOrderHistory   *orderUseCases.GetOrderHistoryUseCase
+	payment           *orderUseCases.PaymentUseCase
 }
 
 func NewOrderHandler(
@@ -32,6 +33,7 @@ func NewOrderHandler(
 	delete *orderUseCases.DeleteOrderUseCase,
 	getOrder *orderUseCases.GetOrderUseCase,
 	getHistory *orderUseCases.GetOrderHistoryUseCase,
+	payment *orderUseCases.PaymentUseCase,
 ) *OrderHandler {
 	return &OrderHandler{
 		createOrder:       create,
@@ -41,6 +43,99 @@ func NewOrderHandler(
 		deleteOrder:       delete,
 		getOrder:          getOrder,
 		getOrderHistory:   getHistory,
+		payment:           payment,
+	}
+}
+
+// PaymentSummary returns the invoice-ready price and any completed payment.
+func (h *OrderHandler) PaymentSummary(c *gin.Context) {
+	order, err := h.loadAuthorizedOrder(c)
+	if err != nil {
+		writeOrderError(c, err)
+		return
+	}
+	summary, err := h.payment.Summary(order.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, paymentPayload(summary))
+}
+
+// Invoice returns the immutable payment receipt plus the order line items.
+func (h *OrderHandler) Invoice(c *gin.Context) {
+	order, err := h.loadAuthorizedOrder(c)
+	if err != nil {
+		writeOrderError(c, err)
+		return
+	}
+	summary, err := h.payment.Summary(order.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if summary.Payment == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "la factura estara disponible despues del pago"})
+		return
+	}
+	c.JSON(http.StatusOK, paymentPayload(summary))
+}
+
+type payOrderRequest struct {
+	Method string `json:"method" binding:"required"`
+}
+
+// Pay creates one simulated, final payment. No sensitive payment data is accepted.
+func (h *OrderHandler) Pay(c *gin.Context) {
+	order, err := h.loadAuthorizedOrder(c)
+	if err != nil {
+		writeOrderError(c, err)
+		return
+	}
+	var req payOrderRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	payment, err := h.payment.Pay(order.ID, req.Method)
+	if err != nil {
+		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, paymentPayload(&models.PaymentSummary{Order: order, Payment: payment}))
+}
+
+func paymentPayload(summary *models.PaymentSummary) gin.H {
+	status := "pending"
+	payload := gin.H{
+		"order":          dto.NewOrderResponse(summary.Order),
+		"subtotal":       summary.Order.EstimatedCost,
+		"total":          summary.Order.EstimatedCost,
+		"currency":       "DOP",
+		"payment_status": status,
+		"can_pay":        summary.CanPay,
+	}
+	if summary.Payment != nil {
+		status = summary.Payment.Status
+		payload["payment_status"] = status
+		payload["invoice_number"] = summary.Payment.ReceiptNo
+		payload["paid_at"] = summary.Payment.PaidAt
+		payload["payment_method"] = paymentMethodPayload(summary.Payment.Method)
+		payload["receipt"] = summary.Payment
+	}
+	return payload
+}
+
+func paymentMethodPayload(method string) string {
+	switch method {
+	case "tarjeta":
+		return "card"
+	case "transferencia":
+		return "transfer"
+	case "efectivo":
+		return "cash"
+	default:
+		return method
 	}
 }
 
