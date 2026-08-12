@@ -59,7 +59,7 @@ func main() {
 	createServiceType := orderUseCases.NewCreateServiceTypeUseCase(stRepo)
 
 	createOrder := orderUseCases.NewCreateOrderUseCase(orderRepo, predRepo, stRepo)
-	updateOrderStatus := orderUseCases.NewUpdateOrderStatusUseCase(orderRepo, predRepo)
+	updateOrderStatus := orderUseCases.NewUpdateOrderStatusUseCase(orderRepo, predRepo, hub)
 	// 6. Handlers
 	customerHandler := handlers.NewCustomerHandler(createCustomer, getAllCustomers, customerUseCases.NewDeleteCustomerUseCase(customerRepo))
 	getAllOrders := orderUseCases.NewGetAllOrdersUseCase(orderRepo)
@@ -106,11 +106,11 @@ func main() {
 		api.POST("/orders", orderHandler.Create)
 
 		// Órdenes — cualquier usuario autenticado puede ver
-		api.GET("/orders", orderHandler.GetAll)
 
 		// Órdenes — solo operadores pueden crear/modificar/eliminar
 		operator := api.Group("/", middleware.OperatorOnly())
 		{
+			operator.GET("/orders", orderHandler.GetAll)
 			operator.DELETE("/users/:id", authHandler.DeleteUser)
 			operator.PATCH("/orders/:id/status", orderHandler.UpdateStatus)
 			operator.DELETE("/orders/:id", orderHandler.Delete)
@@ -129,11 +129,8 @@ func main() {
 	}
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-
 	// WebSocket endpoint
-	r.GET("/ws", func(c *gin.Context) {
-		hub.HandleConnection(c.Writer, c.Request)
-	})
+	r.GET("/ws", websocketHandler(hub))
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -144,6 +141,20 @@ func main() {
 	r.Run(":" + port)
 
 	log.Print(" 🌐 http://localhost:8080/swagger/index.html#/")
+}
+
+// websocketHandler godoc
+// @Summary WebSocket de notificaciones
+// @Description Conexión autenticada para clientes. Envía STATUS_CHANGE y ORDER_READY; use Authorization Bearer o access_token.
+// @Tags notifications
+// @Security BearerAuth
+// @Produce json
+// @Success 101 "Conexión WebSocket establecida"
+// @Router /ws [get]
+func websocketHandler(hub *websocket.Hub) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		hub.HandleConnection(c.Writer, c.Request)
+	}
 }
 
 // LogNotifier — implementación temporal del port Notifier

@@ -91,6 +91,14 @@ func (h *OrderHandler) GetAll(c *gin.Context) {
 	c.JSON(http.StatusOK, orders)
 }
 
+// GetMy godoc
+// @Summary Obtener mis órdenes
+// @Description Devuelve únicamente las órdenes del cliente autenticado
+// @Tags orders
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {array} dto.OrderResponse
+// @Router /orders/mine [get]
 func (h *OrderHandler) GetMy(c *gin.Context) {
 	customerID := c.GetString("user_id")
 	orders, err := h.getMyOrders.Execute(customerID)
@@ -111,7 +119,7 @@ func (h *OrderHandler) GetMy(c *gin.Context) {
 // @Param id path string true "ID de la orden"
 // @Param status body string true "Nuevo estado de la orden"
 // @Success 200 "Estado actualizado con éxito"
-// @Router /orders/{id} [put]
+// @Router /orders/{id}/status [patch]
 func (h *OrderHandler) UpdateStatus(c *gin.Context) {
 	orderID := c.Param("id")
 

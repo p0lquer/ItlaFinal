@@ -64,8 +64,12 @@ func (uc *RegisterUserUseCase) Execute(
 
 	if role == models.RoleCustomer && uc.customerRepo != nil {
 		customer := &models.Customer{
-			ID:   user.ID,
-			Name: name,
+			// Mantener la misma clave para el perfil autocreado permite que el
+			// token del cliente identifique de forma directa sus órdenes. Los
+			// clientes creados por un operador siguen recibiendo UUID del servidor.
+			ID:     user.ID,
+			UserID: &user.ID,
+			Name:   name,
 		}
 		if phone != "" {
 			customer.Phone = &phone
@@ -75,6 +79,9 @@ func (uc *RegisterUserUseCase) Execute(
 		}
 
 		if err := uc.customerRepo.Create(customer); err != nil {
+			// Las interfaces actuales no exponen una transacción compartida. Se
+			// compensa la creación de usuario para no dejar una cuenta sin perfil.
+			_ = uc.userRepo.Delete(user.ID)
 			return nil, err
 		}
 	}

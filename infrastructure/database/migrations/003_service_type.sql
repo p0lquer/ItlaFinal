@@ -6,8 +6,8 @@ CREATE TABLE IF NOT EXISTS service_types (
 );
 
 -- Algunos tipos iniciales de ejemplo
-INSERT INTO service_types (id, name, description) VALUES
-    ('st1', 'Lavado y Secado',  'Lavado completo con secado incluido'),
-    ('st2', 'Planchado',        'Servicio de planchado de prendas'),
-    ('st3', 'Lavado en Seco',   'Limpieza en seco para prendas delicadas')
+INSERT INTO service_types (name, description) VALUES
+    ('Lavado y Secado',  'Lavado completo con secado incluido'),
+    ('Planchado',        'Servicio de planchado de prendas'),
+    ('Lavado en Seco',   'Limpieza en seco para prendas delicadas')
 ON CONFLICT (name) DO NOTHING;

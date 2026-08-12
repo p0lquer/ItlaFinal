@@ -1,0 +1,43 @@
+name: Backend CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: TimeGoBetter
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d TimeGoBetter"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.5'
+      - name: Format
+        run: test -z "$(gofmt -l .)"
+      - name: Apply migrations on an empty database
+        env:
+          PGPASSWORD: postgres
+        run: |
+          for migration in infrastructure/database/migrations/*.sql; do
+            psql -h localhost -U postgres -d TimeGoBetter -v ON_ERROR_STOP=1 -f "$migration"
+          done
+      - name: Unit tests
+        run: go test ./...
+      - name: Static analysis
+        run: go vet ./...
+      - name: Build
+        run: go build ./cmd/server

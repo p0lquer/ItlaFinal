@@ -3,6 +3,8 @@ package customerUseCases
 import (
 	"ITLAFINAL/domain/models"
 	"ITLAFINAL/domain/ports"
+
+	"github.com/google/uuid"
 )
 
 type CreateCustomerUseCase struct {
@@ -15,9 +17,9 @@ func NewCreateCustomerUseCase(customerRepo ports.CustomerRepository) *CreateCust
 	}
 }
 
-func (uc *CreateCustomerUseCase) Execute(id, name, phone, email string) (*models.Customer, error) {
+func (uc *CreateCustomerUseCase) Execute(_ string, name, phone, email string) (*models.Customer, error) {
 	customer := &models.Customer{
-		ID:    id,
+		ID:    uuid.NewString(),
 		Name:  name,
 		Phone: &phone,
 		Email: &email,

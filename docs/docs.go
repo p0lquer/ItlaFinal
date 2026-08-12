@@ -286,8 +286,70 @@ const docTemplate = `{
                 }
             }
         },
+        "/orders/mine": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Devuelve únicamente las órdenes del cliente autenticado",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Obtener mis órdenes",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.OrderResponse"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/orders/{id}": {
-            "put": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Elimina una orden existente de la base de datos",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Eliminar una orden",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID de la orden",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Orden eliminada con éxito"
+                    }
+                }
+            }
+        },
+        "/orders/{id}/status": {
+            "patch": {
                 "security": [
                     {
                         "BearerAuth": []
@@ -327,14 +389,16 @@ const docTemplate = `{
                         "description": "Estado actualizado con éxito"
                     }
                 }
-            },
-            "delete": {
+            }
+        },
+        "/service-types": {
+            "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Elimina una orden existente de la base de datos",
+                "description": "Recupera la lista de todos los tipos de servicio registrados",
                 "consumes": [
                     "application/json"
                 ],
@@ -342,21 +406,52 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "orders"
+                    "service-types"
                 ],
-                "summary": "Eliminar una orden",
+                "summary": "Obtener todos los tipos de servicio",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.ServiceTypeResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Registra un nuevo tipo de servicio en la base de datos",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "service-types"
+                ],
+                "summary": "Crear un tipo de servicio",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "ID de la orden",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
+                        "description": "Service type data",
+                        "name": "serviceType",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateServiceTypeRequest"
+                        }
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "Orden eliminada con éxito"
+                    "201": {
+                        "description": "Tipo de servicio creado con éxito"
                     }
                 }
             }
@@ -386,6 +481,28 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "Usuario eliminado con éxito"
+                    }
+                }
+            }
+        },
+        "/ws": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Conexión autenticada para clientes. Envía STATUS_CHANGE y ORDER_READY; use Authorization Bearer o access_token.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "notifications"
+                ],
+                "summary": "WebSocket de notificaciones",
+                "responses": {
+                    "101": {
+                        "description": "Conexión WebSocket establecida"
                     }
                 }
             }
@@ -441,6 +558,34 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CreateServiceTypeRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "base_price": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 2
+                },
+                "price_per_piece": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "price_per_weight": {
+                    "type": "number",
+                    "minimum": 0
+                }
+            }
+        },
         "dto.LoginRequest": {
             "type": "object",
             "required": [
@@ -453,6 +598,44 @@ const docTemplate = `{
                 },
                 "password": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.OrderResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "customer_id": {
+                    "type": "string"
+                },
+                "estimated_cost": {
+                    "type": "number"
+                },
+                "estimated_time_minutes": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "pieces_count": {
+                    "type": "integer"
+                },
+                "ready_at": {
+                    "type": "string"
+                },
+                "service_type": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "weight": {
+                    "type": "number"
                 }
             }
         },
@@ -481,6 +664,29 @@ const docTemplate = `{
                 },
                 "phone": {
                     "type": "string"
+                }
+            }
+        },
+        "dto.ServiceTypeResponse": {
+            "type": "object",
+            "properties": {
+                "base_price": {
+                    "type": "number"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price_per_piece": {
+                    "type": "number"
+                },
+                "price_per_weight": {
+                    "type": "number"
                 }
             }
         }

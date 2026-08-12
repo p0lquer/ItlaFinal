@@ -4,9 +4,9 @@ services:
     container_name: itla_postgres
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 3203
-      POSTGRES_DB: TimeGoBetter
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-replace-with-a-local-development-password}
+      POSTGRES_DB: ${POSTGRES_DB:-TimeGoBetter}
     ports:
       - "5433:5432"
     volumes:

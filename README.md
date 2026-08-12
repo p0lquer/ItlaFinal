@@ -1,27 +1,29 @@
-# Sistema de Gestión de Órdenes — ITLA Proyecto Final
+# TimeGoBetter API
 
-## Requisitos
-- Go 1.22+
-- Node.js 18+
-- Docker Desktop (recomendado) o PostgreSQL instalado
+API Go para la gestión de órdenes de lavandería. Requiere Go 1.26+, Docker Desktop y PostgreSQL 16.
 
-## Cómo correr el proyecto
+## Inicio local
 
-### 1. Clonar el repositorio
-git clone <url-del-repo>
+1. Copia `.env.example` a `.env` y reemplaza los secretos de ejemplo. `JWT_SECRET` debe tener al menos 32 caracteres.
+2. Inicia PostgreSQL:
 
-### 2. Base de datos
-Con Docker (recomendado):
+```powershell
 docker compose up -d
+docker compose ps
+```
 
-Sin Docker: crear la base de datos manualmente
-y correr infrastructure/database/migrations/001_init.sql
+3. Ejecuta las validaciones y servidor:
 
-### 3. Backend
-cd ITLAFINAL
-cp .env.example .env   ← llenar con tus credenciales
-go run cmd/server/main.go
+```powershell
+go test ./...
+go vet ./...
+go run ./cmd/server
+```
 
-## URLs
+La API escucha en `http://localhost:8080`, Swagger en `http://localhost:8080/swagger/index.html` y WebSocket en `ws://localhost:8080/ws`. El WebSocket requiere el JWT del cliente mediante `?access_token=<token>`.
 
-- API Docs: http://localhost:8080/swagger/index.html
+Para detener la BD sin borrar datos: `docker compose down`. Para reiniciar datos de desarrollo: `docker compose down -v` (destructivo).
+
+## Variables requeridas
+
+`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`, `OPERATOR_KEY`, `PORT` y `WS_ALLOWED_ORIGINS`.

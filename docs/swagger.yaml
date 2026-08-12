@@ -34,6 +34,26 @@ definitions:
     - service_type
     - weight
     type: object
+  dto.CreateServiceTypeRequest:
+    properties:
+      base_price:
+        minimum: 0
+        type: number
+      description:
+        type: string
+      name:
+        maxLength: 50
+        minLength: 2
+        type: string
+      price_per_piece:
+        minimum: 0
+        type: number
+      price_per_weight:
+        minimum: 0
+        type: number
+    required:
+    - name
+    type: object
   dto.LoginRequest:
     properties:
       email:
@@ -43,6 +63,31 @@ definitions:
     required:
     - email
     - password
+    type: object
+  dto.OrderResponse:
+    properties:
+      created_at:
+        type: string
+      customer_id:
+        type: string
+      estimated_cost:
+        type: number
+      estimated_time_minutes:
+        type: number
+      id:
+        type: string
+      notes:
+        type: string
+      pieces_count:
+        type: integer
+      ready_at:
+        type: string
+      service_type:
+        type: string
+      status:
+        type: string
+      weight:
+        type: number
     type: object
   dto.RegisterRequest:
     properties:
@@ -63,6 +108,21 @@ definitions:
     - email
     - name
     - password
+    type: object
+  dto.ServiceTypeResponse:
+    properties:
+      base_price:
+        type: number
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      price_per_piece:
+        type: number
+      price_per_weight:
+        type: number
     type: object
 host: localhost:8080
 info:
@@ -260,7 +320,8 @@ paths:
       summary: Eliminar una orden
       tags:
       - orders
-    put:
+  /orders/{id}/status:
+    patch:
       consumes:
       - application/json
       description: Actualiza el estado de una orden existente
@@ -286,6 +347,63 @@ paths:
       summary: Actualizar el estado de una orden
       tags:
       - orders
+  /orders/mine:
+    get:
+      description: Devuelve únicamente las órdenes del cliente autenticado
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.OrderResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Obtener mis órdenes
+      tags:
+      - orders
+  /service-types:
+    get:
+      consumes:
+      - application/json
+      description: Recupera la lista de todos los tipos de servicio registrados
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.ServiceTypeResponse'
+            type: array
+      security:
+      - BearerAuth: []
+      summary: Obtener todos los tipos de servicio
+      tags:
+      - service-types
+    post:
+      consumes:
+      - application/json
+      description: Registra un nuevo tipo de servicio en la base de datos
+      parameters:
+      - description: Service type data
+        in: body
+        name: serviceType
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateServiceTypeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Tipo de servicio creado con éxito
+      security:
+      - BearerAuth: []
+      summary: Crear un tipo de servicio
+      tags:
+      - service-types
   /users/{id}:
     delete:
       consumes:
@@ -305,6 +423,20 @@ paths:
       summary: Eliminar un usuario
       tags:
       - auth
+  /ws:
+    get:
+      description: Conexión autenticada para clientes. Envía STATUS_CHANGE y ORDER_READY;
+        use Authorization Bearer o access_token.
+      produces:
+      - application/json
+      responses:
+        "101":
+          description: Conexión WebSocket establecida
+      security:
+      - BearerAuth: []
+      summary: WebSocket de notificaciones
+      tags:
+      - notifications
 securityDefinitions:
   BearerAuth:
     in: header

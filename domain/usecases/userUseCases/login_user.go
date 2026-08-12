@@ -2,11 +2,10 @@ package userUseCases
 
 import (
 	"ITLAFINAL/domain/ports"
+	"ITLAFINAL/pkg/authjwt"
 	"errors"
-	"os"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -37,17 +36,7 @@ func (uc *LoginUserUseCase) Execute(email, password string) (*LoginResult, error
 		return nil, errors.New("credenciales inválidas")
 	}
 
-	// Generar JWT
-	claims := jwt.MapClaims{
-		"user_id": user.ID,
-		"email":   user.Email,
-		"role":    user.Role,
-		"exp":     time.Now().Add(24 * time.Hour).Unix(), // expira en 24 horas
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	secret := os.Getenv("JWT_SECRET")
-	tokenString, err := token.SignedString([]byte(secret))
+	tokenString, err := authjwt.NewToken(user.ID, user.Email, string(user.Role), time.Now())
 	if err != nil {
 		return nil, errors.New("error al generar el token")
 	}
