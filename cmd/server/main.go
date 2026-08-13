@@ -4,6 +4,7 @@ import (
 	"ITLAFINAL/adapters/handlers"
 	"ITLAFINAL/adapters/middleware"
 	"ITLAFINAL/adapters/websocket"
+	"ITLAFINAL/domain/usecases/analyticsUseCases"
 	"ITLAFINAL/domain/usecases/customerUseCases"
 	"ITLAFINAL/domain/usecases/orderUseCases"
 	"ITLAFINAL/domain/usecases/userUseCases"
@@ -52,6 +53,7 @@ func main() {
 	customerRepo := repository.NewCustomerRepository(db)
 	orderRepo := repository.NewOrderRepository(db)
 	paymentRepo := repository.NewPaymentRepository(db)
+	analyticsRepo := repository.NewAnalyticsRepository(db)
 	predRepo := repository.NewPredictionRepository(db)
 	stRepo := repository.NewServiceTypeRepository(db)
 
@@ -99,6 +101,7 @@ func main() {
 	deleteUserUC := userUseCases.NewDeleteUserUseCase(userRepo, customerRepo)
 	authHandler := handlers.NewAuthHandler(registerUC, loginUC, deleteUserUC)
 	adminHandler := handlers.NewAdminHandler(userUseCases.NewAdminUsersUseCase(userRepo))
+	analyticsHandler := handlers.NewAnalyticsHandler(analyticsUseCases.NewDashboardUseCase(analyticsRepo))
 
 	// 9. Router
 	r := gin.Default()
@@ -145,6 +148,7 @@ func main() {
 
 		admin := api.Group("/admin", middleware.AdminOnly())
 		{
+			admin.GET("/analytics", analyticsHandler.Dashboard)
 			admin.GET("/users", adminHandler.ListUsers)
 			admin.PATCH("/users/:id/block", adminHandler.BlockUser)
 			admin.PATCH("/users/:id/unblock", adminHandler.UnblockUser)
