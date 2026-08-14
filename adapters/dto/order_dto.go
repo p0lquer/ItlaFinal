@@ -6,7 +6,10 @@ import (
 )
 
 type CreateOrderRequest struct {
-	CustomerID  string  `json:"customer_id"  binding:"omitempty,uuid4"`
+	// Customer identifiers are database keys, not necessarily UUID v4 values.
+	// Existing imported/demo records may use legacy 32-character IDs; ownership
+	// and the customers FK remain the authoritative integrity controls.
+	CustomerID  string  `json:"customer_id"  binding:"omitempty,max=36"`
 	ServiceType string  `json:"service_type" binding:"required"`
 	PiecesCount int     `json:"pieces_count" binding:"required,min=1,max=200"`
 	Weight      float64 `json:"weight" binding:"required,gt=0,lte=100"`
