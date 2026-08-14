@@ -8,6 +8,31 @@ import (
 
 type analyticsRepositoryPG struct{ db *sql.DB }
 
+const ordersTrendQuery = `WITH daily AS (
+	SELECT created_at::date AS day, COUNT(*)::float8 AS value
+	FROM orders
+	WHERE created_at >= CURRENT_DATE - INTERVAL '6 day'
+	  AND created_at < CURRENT_DATE + INTERVAL '1 day'
+	GROUP BY created_at::date
+)
+SELECT TO_CHAR(days.day, 'DD Mon'), COALESCE(daily.value, 0)
+FROM generate_series(CURRENT_DATE - INTERVAL '6 day', CURRENT_DATE, '1 day') AS days(day)
+LEFT JOIN daily ON daily.day = days.day::date
+ORDER BY days.day`
+
+const revenueTrendQuery = `WITH daily AS (
+	SELECT paid_at::date AS day, SUM(amount)::float8 AS value
+	FROM payments
+	WHERE status = 'paid'
+	  AND paid_at >= CURRENT_DATE - INTERVAL '6 day'
+	  AND paid_at < CURRENT_DATE + INTERVAL '1 day'
+	GROUP BY paid_at::date
+)
+SELECT TO_CHAR(days.day, 'DD Mon'), COALESCE(daily.value, 0)
+FROM generate_series(CURRENT_DATE - INTERVAL '6 day', CURRENT_DATE, '1 day') AS days(day)
+LEFT JOIN daily ON daily.day = days.day::date
+ORDER BY days.day`
+
 var _ ports.AnalyticsRepository = (*analyticsRepositoryPG)(nil)
 
 func NewAnalyticsRepository(db *sql.DB) ports.AnalyticsRepository {
@@ -36,10 +61,15 @@ func (r *analyticsRepositoryPG) Dashboard() (*models.AnalyticsDashboard, error) 
 	if dashboard.UsersByRole, err = r.points(`SELECT role, COUNT(*)::float8 FROM users GROUP BY role ORDER BY role`); err != nil {
 		return nil, err
 	}
-	if dashboard.OrdersTrend, err = r.points(`SELECT TO_CHAR(day, 'DD Mon'), COALESCE(COUNT(o.id),0)::float8 FROM generate_series(CURRENT_DATE - INTERVAL '6 day', CURRENT_DATE, '1 day') day LEFT JOIN orders o ON o.created_at >= day AND o.created_at < day + INTERVAL '1 day' GROUP BY day ORDER BY day`); err != nil {
+	// Aggregate the bounded seven-day range before joining its calendar. Besides
+	// keeping zero-order days visible, the sargable created_at predicate lets
+	// PostgreSQL use orders_created_at_idx instead of scanning all history.
+	if dashboard.OrdersTrend, err = r.points(ordersTrendQuery); err != nil {
 		return nil, err
 	}
-	if dashboard.RevenueTrend, err = r.points(`SELECT TO_CHAR(day, 'DD Mon'), COALESCE(SUM(p.amount),0)::float8 FROM generate_series(CURRENT_DATE - INTERVAL '6 day', CURRENT_DATE, '1 day') day LEFT JOIN payments p ON p.paid_at >= day AND p.paid_at < day + INTERVAL '1 day' AND p.status='paid' GROUP BY day ORDER BY day`); err != nil {
+	// This is equivalent to the former calendar LEFT JOIN but reads only paid
+	// payments in the displayed window; the partial covering index supports it.
+	if dashboard.RevenueTrend, err = r.points(revenueTrendQuery); err != nil {
 		return nil, err
 	}
 	return dashboard, nil
